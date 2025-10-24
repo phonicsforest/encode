@@ -21,6 +21,7 @@
   #bell { height:min(18vh,18vw); z-index:5; transform:rotate(-30deg); pointer-events:auto; transition:transform .15s ease, filter .2s ease; bottom:40px; }
   #bell:hover { transform:rotate(-20deg) scale(1.08); filter:brightness(1.15); }
   #bell.bell-press { transform:rotate(-20deg) scale(1.05); filter:brightness(1.1); }
+  #bell[disabled]{ pointer-events:none; filter:none; opacity:1; } /* disable 亦不透明 */
 
   /* 雪花 */
   .snowWrap { position:absolute; top:-10vh; pointer-events:none; z-index:6; will-change:transform; }
@@ -28,20 +29,20 @@
   @keyframes snow-fall { to { transform: translateY(110vh) rotate(360deg); opacity:.9; } }
   @keyframes snow-sway { 0%{transform:translateX(calc(var(--amp)*-1));} 50%{transform:translateX(var(--amp));} 100%{transform:translateX(calc(var(--amp)*-1));} }
 
-  /* 樹飾物 */
-  .tree1-bauble, .tree2-bauble { position:absolute; z-index:4; aspect-ratio:1/1; cursor:pointer; transform: scale(1.5);   /* 👈 一開始就放大 1.3 倍 */
-  transition: transform .18s ease; }
+  /* 樹飾物（初始已放大） */
+  .tree1-bauble, .tree2-bauble { position:absolute; z-index:4; aspect-ratio:1/1; cursor:pointer; transform: scale(1.5); transition: transform .18s ease; }
+  .tree1-bauble:hover, .tree2-bauble:hover { transform: scale(1.6); }
   .tree1-bauble img, .tree2-bauble img { width:100%; height:100%; object-fit:contain; display:block; }
   .baubleLetter, .tree2-letter {
-    position:absolute; left:50%; bottom:18%; transform:translateX(-50%);
+    position:absolute; left:50%; bottom:12%; transform:translateX(-50%);
     font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, "PingFang HK";
     text-shadow:0 1px 2px rgba(0,0,0,.35);
   }
   .baubleLetter { color:#fff; font-weight:500; }
   .tree2-letter { color:#d01010; font-weight:700; }
-
-  /* hover 放大（連字） */
-  .tree1-bauble:hover, .tree2-bauble:hover { transform: scale(1.6); }
+  /* 選中：換 glow 圖 */
+  .tree1-bauble.selected img{ content:url('graphic/redbauble_glow.png'); }
+  .tree2-bauble.selected img{ content:url('graphic/whitebauble_glow.png'); }
 
   /* 🎈 Balloon group */
   .balloon-group{
@@ -52,65 +53,129 @@
   .balloon-group .balloon{ position:absolute; width:60%; height:auto; }
   #redBalloon{    left:20%; top:0%;   z-index:1; }
   #yellowBalloon{ left:50%; top:10%;  z-index:2; }
-  #giftBox{ pointer-events:auto; cursor:pointer; position:absolute; width:58%; left:33%; top:90%; z-index:3; }
+  #giftBox{ pointer-events:auto; cursor:pointer; position:absolute; width:58%; left:33%; top:90%; z-index:3; transition: transform .25s ease; }
 
-  /* 入/出場（出場慢 2s，不透明） */
+/* 🪶 氣球飄浮動畫 */
+@keyframes balloonFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+#redBalloon, #yellowBalloon, #giftBox {
+  animation: balloonFloat 2.8s ease-in-out infinite;
+}
+
+
+  /* 入/出場（出場 2s，不透明） */
   #balloonGroup.enterRight { animation: groupInRight 1.6s ease-out forwards; }
   #balloonGroup.leaveLeft  { animation: groupOutLeft 2s ease-out forwards; }
   @keyframes groupInRight  { from { transform: translateX(60vw); } to { transform: translateX(0); } }
-  @keyframes groupOutLeft  { from { transform: translateX(0); }    to { transform: translateX(-80vw); } }
+  @keyframes groupOutLeft  { from { transform: translateX(0); }    to { transform: translateX(-110vw); } }
 
-  /* *_b 漸隱（極短） */
-  .balloon-burst-fade { animation: burstFade .025s linear forwards; }
+  /* *_b 極速漸隱 */
+  .balloon-burst-fade { animation: burstFade .25s linear forwards; }
   @keyframes burstFade { from{opacity:1} to{opacity:0} }
 
-  /* GiftBox 動效 & 掉落（你改成 2.0s） */
+  /* GiftBox 掉落（2s） + 斜落 */
   .box-drop { animation: boxFall 2s cubic-bezier(.2,.8,.2,1) forwards; }
   @keyframes boxFall {
     0%   { transform: translateY(0); opacity:1; }
     85%  { transform: translateY(75vh); opacity:1; }
     100% { transform: translateY(80vh); opacity:0; }
   }
-  .box-tilt-drop       { transform: translateY(30px) rotate(-25deg);    transition: transform .25s ease; }
-  .box-tilt-neg-drop   { transform: translateY(30px) rotate(25deg);   transition: transform .25s ease; }
+  .box-tilt-drop     { transform: translateY(30px) rotate(-25deg); transition: transform .25s ease; }
+  .box-tilt-neg-drop { transform: translateY(30px) rotate(25deg);  transition: transform .25s ease; }
 
   /* 選單：置中疊背景 */
   #setPicker {
     position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
     background: rgba(255,255,255,.85); border-radius: 8px; padding: 6px 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,.2); z-index: 9999; font-size: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 100000; font-size: 14px; display:flex; gap:10px; align-items:center;
   }
-  #setPicker select, #setPicker button { font-size:14px; padding:4px 8px; }
+/* 下拉選單樣式（帶清晰邊框） */
+#setPicker select{
+  padding: 6px 12px;
+  border: 2px solid #2b2b2b;     /* 深色邊框（左邊就會見到） */
+  border-radius: 10px;
+  background: #fff;
+  color: #1f1f1f;
+  appearance: none;              /* 需要保留的話可刪 */
+}
+#setPicker select:focus{
+  outline: 2px solid rgba(200,16,46,.35);
+  outline-offset: 2px;
+}
 
-  /* Finish 面板 */
-  #finishPanel{
-    position:fixed; inset:0; display:none; align-items:center; justify-content:center;
-    background:rgba(0,0,0,.35); z-index:99999;
-  }
+/* 🎄 小圓形 Go 掣 */
+#setGoBtn {
+  background: #c8102e;       /* 聖誕紅 */
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.3s ease;
+}
+#setGoBtn:hover {
+  background: #e01e37;
+  transform: scale(1.1);
+}
+@keyframes bob {
+  0%{transform:translateY(0)}
+  50%{transform:translateY(-8px)}
+  100%{transform:translateY(0)}
+}
+/* 只要 balloonGroup 有 .float，三件物件一齊飄 */
+.balloon-group.float #redBalloon,
+.balloon-group.float #yellowBalloon,
+.balloon-group.float #giftBox{
+  animation:bob 2.6s ease-in-out infinite;
+}
+
+  /* Finish 面板（收窄） */
+  #finishPanel{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background: transparent; z-index:9000;pointer-events:none; }
   #finishCard{
-    background:#fff; border-radius:12px; padding:16px 18px; min-width:260px; max-width:90vw;
-    box-shadow:0 10px 30px rgba(0,0,0,.25); font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    background:transparent; border-radius:12px; padding:16px 18px;
+    width:clamp(260px,15vw,380px); max-width:90vw;
+   font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    text-align:center;
   }
-  #finishCard h2{ margin:.2em 0 .3em; font-size:20px; text-align:center; }
-  #finishList{ font-size:16px; line-height:1.6; white-space:pre; margin-bottom:10px; }
-  #playAgainBtn{ display:block; margin:6px auto 0; padding:6px 12px; border-radius:8px; border:1px solid #ddd; background:#f6f6f6; cursor:pointer; }
+.balloon-group.leaver { z-index: 9; }  /* 舊組起飛時放到最上 */
+
+  #finishCard h2{ margin:.2em 0 .3em; font-size:30px;color:#8d0f0f;   /* 🔴 深紅色 */ }
+  #finishList{ font-size:20px; line-height:1.6; white-space:pre; margin-bottom:10px; }
+  #playAgainBtn{ display:block; margin:6px auto 0; padding:8px 16px; border-radius:999px; border:2px solid #8d0f0f; background:#fff; color:#8d0f0f; font-weight:700; cursor:pointer; }
+  #playAgainBtn:hover{ background:#8d0f0f; color:#fff; }
 </style>
 </head>
 <body>
-  <!-- 選單（去掉 “Set” 字） -->
+  <!-- 選單 -->
   <div id="setPicker">
     <select id="setPickerSelect">
       <option value="">-----</option>
-      <option value="0">1</option>
-      <option value="1">2</option>
-      <option value="2">3</option>
-      <option value="3">4</option>
-      <option value="4">5</option>
-      <option value="5">6</option>
-      <option value="6">7</option>
-      <option value="7">8</option>
-      <option value="8">9</option>
-      <option value="9">10</option>
+      <option value="0">Set 1</option>
+      <option value="1">Set 2</option>
+      <option value="2">Set 3</option>
+      <option value="3">Set 4</option>
+      <option value="4">Set 5</option>
+      <option value="5">Set 6</option>
+      <option value="6">Set 7</option>
+      <option value="7">Set 8</option>
+      <option value="8">Set 9</option>
+      <option value="9">Set 10</option>
+      <option value="10">Set 11</option>
+      <option value="11">Set 12</option>
+      <option value="12">Set 13</option>
+      <option value="13">Set 14</option>
+      <option value="14">Set 15</option>
+      <option value="15">Set 16</option>
+      <option value="16">Set 17</option>
+      <option value="17">Set 18</option>
+      <option value="18">Set 19</option>
+      <option value="19">Set 20</option>
+
     </select>
     <button id="setGoBtn">Go</button>
   </div>
@@ -129,7 +194,6 @@
     <div id="finishCard">
       <h2>Finish!</h2>
       <div id="finishList"></div>
-      <button id="playAgainBtn">Play Again</button>
     </div>
   </div>
 
@@ -150,6 +214,18 @@
     { reds: ['l','m','j','p','r','s','t'], whites: ['a','i','e','o'] },
     { reds: ['b','k','d','f','g','h','n'], whites: ['a','i','e','o','u'] },
     { reds: ['l','m','j','p','r','s','t'], whites: ['a','i','e','o','u'] },
+{ reds: ['b','k','d','f','g','h','n'], whites: ['A'] },
+    { reds: ['l','m','j','p','r','s','t'], whites: ['A'] },
+    { reds: ['b','k','d','f','g','h','n'], whites: ['A','I'] },
+    { reds: ['l','m','j','p','r','s','t'], whites: ['A','I'] },
+    { reds: ['b','k','d','f','g','h','n'], whites: ['A','I','E'] },
+    { reds: ['l','m','j','p','r','s','t'], whites: ['A','I','E'] },
+    { reds: ['b','k','d','f','g','h','n'], whites: ['A','I','E','O'] },
+    { reds: ['l','m','j','p','r','s','t'], whites: ['A','I','E','O'] },
+    { reds: ['b','k','d','f','g','h','n'], whites: ['A','I','E','O','U'] },
+    { reds: ['l','m','j','p','r','s','t'], whites: ['A','I','E','O','U'] },
+
+
   ];
 
   const $  = s => document.querySelector(s);
@@ -157,13 +233,12 @@
   const rect = el => el.getBoundingClientRect();
 
   let currentSetIndex = -1;
-  let currentQueue = [];     // [{r,w}, ...]
-  let basePairs = [];        // 初始題目（Finish 用）
-  let qIndex = -1;
+  let queue = [];          // 出題佇列（會把錯題推到尾）
+  let basePairs = [];      // 初始順序（Finish 顯示用）
+  let qPos = -1;
   let selectedRed = null, selectedWhite = null;
-
-  // 計「答咗幾次先啱」
-  const attemptsMap = {};    // pair -> 次數（包括最後一次正確）
+  let bellLocked = true;
+  const attemptsMap = new Map(); // pair -> 次數
 
   /* 版面 */
   function layout(){
@@ -200,7 +275,7 @@
     positionBalloonGroup();
   }
 
-  /* 紅球（左樹，Z 形） */
+  /* 紅球 */
   function buildTree1Baubles(letters){
     const stage = $('#stage'), tree = $('#treeLeft');
     const sRect = rect(stage), tRect = rect(tree);
@@ -243,22 +318,19 @@
       stage.appendChild(wrap);
 
       wrap.addEventListener('click', ()=>{
-        // 還原其他紅球圖
+        if (bellLocked) return;
         $$('.tree1-bauble').forEach(n=>{
           n.classList.remove('selected');
-          const im = n.querySelector('img');
-          if (im) im.src = 'graphic/redbauble.png';
+          const im=n.querySelector('img'); if(im) im.src='graphic/redbauble.png';
         });
-        // 自己變 glow
         wrap.classList.add('selected');
-        const im = wrap.querySelector('img');
-        if (im) im.src = 'graphic/redbauble_glow.png';
+        const im=wrap.querySelector('img'); if(im) im.src='graphic/redbauble_glow.png';
         selectedRed = wrap;
       });
     }
   }
 
-  /* 白球（中樹） */
+  /* 白球 */
   function buildTree2Baubles(letters){
     const stage = $('#stage'), tree = $('#treeBehind');
     const sRect = rect(stage), tRect = rect(tree);
@@ -301,16 +373,13 @@
       stage.appendChild(wrap);
 
       wrap.addEventListener('click', ()=>{
-        // 還原其他白球圖
+        if (bellLocked) return;
         $$('.tree2-bauble').forEach(n=>{
           n.classList.remove('selected');
-          const im = n.querySelector('img');
-          if (im) im.src = 'graphic/whitebauble.png';
+          const im=n.querySelector('img'); if(im) im.src='graphic/whitebauble.png';
         });
-        // 自己變 glow
         wrap.classList.add('selected');
-        const im = wrap.querySelector('img');
-        if (im) im.src = 'graphic/whitebauble_glow.png';
+        const im=wrap.querySelector('img'); if(im) im.src='graphic/whitebauble_glow.png';
         selectedWhite = wrap;
       });
     }
@@ -335,31 +404,29 @@
     stage.appendChild(g);
 
     positionBalloonGroup();
-    g.classList.add('enterRight');
+g.classList.add('enterRight','float'); // 👈 新題入場時先飄
 
     const pair = getCurrentPair();
     setTimeout(() => { playOnce(`audio/${pair}.mp3`); }, 1600);
 
     box.addEventListener('click', ()=>{
-      // click 先播
-      box.classList.add('gift-pulse');
-      setTimeout(()=>box.classList.remove('gift-pulse'), 400);
+      if (bellLocked) return;
       playOnce(`audio/${pair}.mp3`);
     });
-  }
 
+  }
   function positionBalloonGroup(){
     const g = $('#balloonGroup'); if (!g) return;
     const st = rect($('#stage'));
     const fl = rect($('#flue'));
     const gw = g.getBoundingClientRect().width || parseFloat(getComputedStyle(g).width);
-    const left = (fl.left - st.left) + fl.width/2 - gw/2 -20;
+    const left = (fl.left - st.left) + fl.width/2 - gw/2 - 20;  /* 微調 -20 */
     const top  = Math.max(10, st.height * 0.10);
     g.style.left = left + 'px';
     g.style.top  = top  + 'px';
   }
 
-  /* 音頻 / 工具 */
+  /* 工具 */
   function playOnce(src){
     return new Promise((res)=>{ const a = new Audio(src); a.onended = ()=>res(); a.onerror=()=>res(); a.play().catch(()=>res()); });
   }
@@ -367,155 +434,164 @@
     const span = node?.querySelector('.baubleLetter, .tree2-letter');
     return span ? span.textContent.trim().toLowerCase() : '';
   }
-  function makeQueueForSet(set){
+  function makeQueue(set){
     const reds = [...set.reds];
     shuffle(reds);
-    const q = reds.map(r => ({ r, w: set.whites[Math.floor(Math.random() * set.whites.length)] }));
-    return q;
+    return reds.map(r => ({ r, w: set.whites[Math.floor(Math.random() * set.whites.length)] }));
   }
   function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
-  function getCurrentPair(){
-    const cur = currentQueue[qIndex];
-    return `${cur.r}${cur.w}`;
-  }
+  function getCurrentPair(){ const cur = queue[qPos]; return `${cur.r}${cur.w}`; }
   function fadeBalloon(el, burstSrc, dur=25){
     return new Promise(resolve=>{
       if (!el) return resolve();
       el.src = burstSrc;
       el.classList.add('balloon-burst-fade');
-      setTimeout(()=>{ el.style.display='none'; resolve(); }, dur);
+      setTimeout(()=>{ el.style.display='none'; resolve(); }, 300);
     });
   }
 
-  async function nextQuestion(){
-    qIndex++;
-    if (qIndex >= currentQueue.length){
-      showFinish();
-      return;
-    }
-    selectedRed = null; selectedWhite = null;
-    // 還原 glow 圖
+  /* 題目流程 */
+  function lockBell(lock){
+    bellLocked = lock;
+    const b = $('#bell');
+    if (lock){ b.setAttribute('disabled',''); } else { b.removeAttribute('disabled'); }
+  }
+
+  function nextQuestion(){
+    qPos++;
+    selectedRed = selectedWhite = null;
     $$('.tree1-bauble img').forEach(im=> im.src='graphic/redbauble.png');
     $$('.tree2-bauble img').forEach(im=> im.src='graphic/whitebauble.png');
     $$('.tree1-bauble, .tree2-bauble').forEach(b=>b.classList.remove('selected'));
 
+    if (qPos >= queue.length){ showFinish(); return; }
+
+    // 未做過就先置 0（之後按 submit 會 +1）
+    const key = getCurrentPair();
+    if (!attemptsMap.has(key)) attemptsMap.set(key, 0);
+
     spawnBalloonGroup();
+    lockBell(false);
+
+
   }
 
   /* 提交 */
-  function submit(){
-    $('#bell').classList.add('bell-press'); setTimeout(()=>$('#bell').classList.remove('bell-press'), 120);
-    if (qIndex < 0 || !currentQueue[qIndex]) return;
-    if (!selectedRed || !selectedWhite) return;
+/* 提交 */
+function submit(){
+  if (bellLocked) return;
 
-    const rb = $('#redBalloon');
-    const yb = $('#yellowBalloon');
-    const box = $('#giftBox');
+  // 視覺 + 鐘聲（50%）
+  const bell = $('#bell');
+  bell.classList.add('bell-press');
+  setTimeout(()=>bell.classList.remove('bell-press'), 120);
+  (()=>{ const a=new Audio('audio/bell.mp3'); a.volume=0.5; a.play(); })();
 
-    const pair = getCurrentPair();           // e.g. 'ka'
-    const wantR = pair[0], wantW = pair[1];
-    const gotR  = letterOf(selectedRed);
-    const gotW  = letterOf(selectedWhite);
+  if (qPos < 0 || !queue[qPos]) return;
+  if (!selectedRed || !selectedWhite) return;
 
-    // 計次數（包括今次）
-    attemptsMap[pair] = (attemptsMap[pair] || 0) + 1;
+  lockBell(true);          // 按一次後到下一題先解鎖
+  unlockSetPicker();       // 任何時候都可選 set
 
-    const redCorrect   = (gotR === wantR);
-    const whiteCorrect = (gotW === wantW);
+  const rb  = $('#redBalloon');
+  const yb  = $('#yellowBalloon');
+  const box = $('#giftBox');
 
-    function pop(){ try{ new Audio('audio/pop.mp3').play(); }catch(e){} }
+  const pair  = getCurrentPair();  // e.g. 'ka'
+  const wantR = pair[0], wantW = pair[1];
+  const gotR  = letterOf(selectedRed);
+  const gotW  = letterOf(selectedWhite);
 
-    if (redCorrect && whiteCorrect){
-      // ✅ 雙對：兩個氣球漸隱 → 0.3s → giftbox 掉（2.0s）
-      pop();
-      Promise.all([
-        fadeBalloon(rb, 'graphic/redballoonb.png', 25),
-        fadeBalloon(yb, 'graphic/yellowballoonb.png', 25)
-      ]).then(()=>{
-        setTimeout(()=>{
-          if (box){
-            box.style.display='';
-            box.classList.remove('box-tilt-drop','box-tilt-neg-drop');
-            box.classList.add('box-drop');
-            // drop 開始 1 秒 → happy
-            setTimeout(()=> swapSanta(SANTA_HAPPY, 1200), 1000);
-            box.addEventListener('animationend', () => {
-              box.style.display = 'none';
-              setTimeout(nextQuestion, 150);
-            }, { once:true });
-          } else {
-            setTimeout(()=> swapSanta(SANTA_HAPPY, 900), 1000);
-            setTimeout(nextQuestion, 300);
-          }
-        }, 300);
-      });
+  // 記「答咗幾次先啱」
+  attemptsMap.set(pair, (attemptsMap.get(pair) || 0) + 1);
 
-    } else {
-      // 答錯：把題目排去隊尾
-      currentQueue.push(currentQueue[qIndex]);
+  const redOK   = (gotR === wantR);
+  const whiteOK = (gotW === wantW);
 
-      if (redCorrect && !whiteCorrect){
-        // 🔴 紅啱白錯 → redballoonb；🎁 向下30px + 旋轉 +25°
-        pop();
-        fadeBalloon(rb, 'graphic/redballoonb.png', 25);
+  const pop = ()=>{ try{ new Audio('audio/pop.mp3').play(); }catch(e){} };
+
+  if (redOK && whiteOK){
+    // ✅ 全中：停飄 → 兩個氣球漸隱 → 0.4s → gift 落盒（2s）→ 0.5s 後 Happy + 下一題
+    pop();
+
+    // 停整組飄浮（包括 gift）
+    const group = $('#balloonGroup');
+    group?.classList.remove('float');
+
+    Promise.all([
+      fadeBalloon(rb, 'graphic/redballoonb.png', 250),
+      fadeBalloon(yb, 'graphic/yellowballoonb.png', 250)
+    ]).then(()=>{
+      setTimeout(()=>{                      // 等氣球收一收
         if (box){
-          box.style.display='';
-          box.classList.remove('box-drop','box-tilt-neg-drop');
-          box.classList.add('box-tilt-drop');
-        }
-        setTimeout(()=>{
-          const g = $('#balloonGroup');
-          if (g){
-            g.classList.remove('enterRight');
-            g.classList.add('leaveLeft');
-            // 起飛 1 秒 → sad
-            setTimeout(()=> swapSanta(SANTA_SAD, 900), 1000);
-            g.addEventListener('animationend', ()=> nextQuestion(), {once:true});
-          } else { setTimeout(()=> swapSanta(SANTA_SAD, 900), 1000); setTimeout(nextQuestion, 150); }
-        }, 375);
+          box.style.display = '';
+          // 清任何傾斜／舊動畫
+          box.classList.remove('box-tilt-drop','box-tilt-neg-drop');
+          box.style.animation = 'none';
+          void box.offsetWidth;             // 強制 reflow
+          // 直接用 inline animation 開始下墜（最穩陣）
+          box.style.animation = 'boxFall 2s cubic-bezier(.2,.8,.2,1) forwards';
 
-      } else if (!redCorrect && whiteCorrect){
-        // 🟡 白啱紅錯 → yellowballoonb；🎁 向下30px + 旋轉 -25°
-        pop();
-        fadeBalloon(yb, 'graphic/yellowballoonb.png', 25);
-        if (box){
-          box.style.display='';
-          box.classList.remove('box-drop','box-tilt-drop');
-          box.classList.add('box-tilt-neg-drop');
-        }
-        setTimeout(()=>{
-          const g = $('#balloonGroup');
-          if (g){
-            g.classList.remove('enterRight');
-            g.classList.add('leaveLeft');
-            setTimeout(()=> swapSanta(SANTA_SAD, 900), 1000);
-            g.addEventListener('animationend', ()=> nextQuestion(), {once:true});
-          } else { setTimeout(()=> swapSanta(SANTA_SAD, 900), 1000); setTimeout(nextQuestion, 150); }
-        }, 375);
+          // 掉 0.5s → Happy，同步出下一題
+          setTimeout(()=>{
+            swapSanta(SANTA_HAPPY, 500);
+            nextQuestion();
+          }, 500);
 
-      } else {
-        // ❌ 全錯：立即起飛；起飛 1 秒 → sad
-        const g = $('#balloonGroup');
-        if (g){
-          g.classList.remove('enterRight');
-          g.classList.add('leaveLeft');
-          setTimeout(()=> swapSanta(SANTA_SAD, 900), 1000);
-          g.addEventListener('animationend', ()=> nextQuestion(), {once:true});
-        } else { setTimeout(()=> swapSanta(SANTA_SAD, 900), 1000); setTimeout(nextQuestion, 150); }
-      }
+          // 動畫完成先隱藏盒，並清回 animation
+          box.addEventListener('animationend', ()=>{
+            box.style.display = 'none';
+            box.style.animation = '';
+          }, { once:true });
+        }else{
+          // 理論上不會無盒，但保險
+          setTimeout(()=> swapSanta(SANTA_HAPPY, 500), 500);
+          setTimeout(nextQuestion, 100);
+        }
+      }, 400);
+    });
+
+  } else {
+    // ❌ 唔係全中：題目排到隊尾，照舊飛走（不停止飄浮）
+    queue.push(queue[qPos]);
+
+    // 清傾斜 class（避免殘留角度）
+    if (box) box.classList.remove('box-drop','box-tilt-drop','box-tilt-neg-drop');
+
+    // 直接飛走；飛 0.7s 會觸發 sad（flyOutToLeft 內處理）
+    flyOutToLeft(null, true);
+  }
+}
+ 
+
+  function flyOutToLeft(after, makeSad){
+    const g = $('#balloonGroup'); if (!g){ if(after) after(); return; }
+    g.classList.remove('enterRight');
+g.classList.add('leaver'); 
+    g.classList.add('leaveLeft');
+    if (makeSad){
+     setTimeout(() => {
+  swapSanta(SANTA_SAD, 1200);
+  // ✅ 立刻出下一題（舊組繼續飛走，我哋只係提早出新題）
+  nextQuestion();
+}, 700);
     }
+    g.addEventListener('animationend', ()=>{ g.remove(); if (after) after(); }, {once:true});
   }
 
   function swapSanta(to, ms=1200){
     const s = $('#santa'); s.src = to; setTimeout(()=>{ s.src = SANTA_NORM; }, ms);
   }
 
-  /* Finish：列出所有題目（「答咗幾次先啱」） + Play Again */
+  /* Finish：列出所有題目（幾多次先啱） */
   function showFinish(){
-    const lines = basePairs.map(p => `${p}   x   ${attemptsMap[p] ? attemptsMap[p] : 1}`);
+    const lines = basePairs.map(p => `${p}   x   ${attemptsMap.get(p) ? attemptsMap.get(p) : 1}`);
     $('#finishList').textContent = lines.join('\n');
     $('#finishPanel').style.display = 'flex';
-  }
+  lockBell(true);
+unlockSetPicker();
+
+}
 
   /* 事件 */
   $('#bell').addEventListener('click', submit);
@@ -524,27 +600,31 @@
   $('#setGoBtn').addEventListener('click', ()=>{
     const val = $('#setPickerSelect').value;
     if (val === '') return;
-    currentSetIndex = parseInt(val, 10);
 
+    currentSetIndex = parseInt(val, 10);
     // reset
-    for (const k in attemptsMap) delete attemptsMap[k];
+    attemptsMap.clear();
     $('#finishPanel').style.display = 'none';
+    qPos = -1;
 
     // 畫 baubles
     buildTree1Baubles(SETS[currentSetIndex].reds);
     buildTree2Baubles(SETS[currentSetIndex].whites);
 
-    // 起題
-    currentQueue = makeQueueForSet(SETS[currentSetIndex]);
-    basePairs = currentQueue.map(q => `${q.r}${q.w}`);
-    qIndex = -1;
+    // 起題（建立 queue + basePairs）
+    queue = makeQueue(SETS[currentSetIndex]);
+    basePairs = queue.map(q => `${q.r}${q.w}`);
+
     nextQuestion();
   });
 
-  $('#playAgainBtn').addEventListener('click', ()=>{
-    $('#finishPanel').style.display = 'none';
-    // 返到選單，再揀 set → Go
-  });
+// 🟢 永遠確保選單可以用
+function unlockSetPicker() {
+  const picker = document.querySelector('#setPicker select');
+  const btn = document.querySelector('#setGoBtn');
+  if (picker) picker.removeAttribute('disabled');
+  if (btn) btn.removeAttribute('disabled');
+}
 
   /* 雪花 & 初始 */
   function whenImagesReady(images, cb){
@@ -578,8 +658,10 @@
     window.addEventListener('resize', layout);
     window.addEventListener('orientationchange', layout);
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) startSnow();
+    lockBell(true); // 未開始前不可按
+unlockSetPicker();
+
   });
 </script>
 </body>
 </html>
-
