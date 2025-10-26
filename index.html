@@ -5,21 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Santa Flue – Fixed 1280×740</title>
 <style>
-  html, body { height:100%; margin:0; background:#bfe4f8; }
+  html, body { height:100%; margin:0; background:#bdd7ee; }
 
   /* ====== 固定舞台外框：1280×740，水平置中、貼近上方 ====== */
 /* 讓 frame 以「高度」自動縮小（你的需求） */
 .frame{
-  height: 95vh;               /* 以瀏覽器高度為準，最多佔 95% */
-  aspect-ratio: 1280 / 740;   /* 維持 1280×740 比例 */
-  width: auto;
-  margin: 0 auto;
-  position: relative;
-  border: 10px solid #111;
-  border-radius: 8px;
-  box-sizing: border-box;
-  overflow: hidden;
-  background: #cdeafb;
+  height:100dvh;
+height:100vh;
+  aspect-ratio:1280/740;
+  width:auto;
+  margin:0 auto;
+  position:relative;
+  border:none;            /* ← 去黑邊 */
+  border-radius:0;        /* 可要可不要 */
+  box-sizing:border-box;
+  overflow:hidden;
+  background:#bdd7ee;     /* 與頁面同色 */
 }
 .frame{ min-height: 360px; }
 #scaleRoot{ min-width: 640px; min-height: 370px; }
@@ -37,10 +38,7 @@
 }
 
   /* ====== 舞台（同樣固定 1280×740） ====== */
-  .stage {
-    position:relative; width:100%; height:100%; overflow:hidden;
-    background:url('graphic/background.png') center / cover no-repeat;
-  }
+.stage { position:relative; width:100%; height:100%; overflow:hidden; background:none; }
 
   /* ====== Sprites（把原本 vh/vw 換算成固定 px） ====== */
   .sprite { position:absolute; user-select:none; -webkit-user-drag:none; pointer-events:none; height:auto; }
@@ -55,6 +53,14 @@
   */
   #flue  { height:111px; z-index:20; bottom:0; }
   #santa { height:300px; z-index:100;  bottom:0; }
+ #hill{
+  position:absolute;
+  bottom:0;
+  left:50%;
+  transform:translateX(20%) scale(1.5); /* ← 放大1.5倍 */
+  transform-origin:bottom center;         /* 保持底部齊 */
+  z-index:0;
+}
   #treeLeft   { height:666px; z-index:3; bottom:0; }
   #treeBehind { height:740px; z-index:2; bottom:0; }
   #treeFront  { height:296px; z-index:1; bottom:0; }
@@ -80,13 +86,13 @@
   /* ====== 🎈 Balloon group（保持你設定，換成固定 px） ====== */
   .balloon-group{
     position:absolute; z-index:7;
-    width:179px;             /* min(14vw,260px) -> 14% x 1280 = 179.2 */
+    width:200px;             /* min(14vw,260px) -> 14% x 1280 = 179.2 */
     aspect-ratio:1/1; pointer-events:none;
   }
   .balloon-group .balloon{ position:absolute; width:60%; height:auto; }
   #redBalloon{    left:20%; top:0%;   z-index:1; }
   #yellowBalloon{ left:50%; top:10%;  z-index:2; }
-  #giftBox{ pointer-events:auto; cursor:pointer; position:absolute; width:58%; left:25%; top:90%; z-index:3; transition: transform .25s ease; }
+  #giftBox{ left:40%; pointer-events:auto; cursor:pointer; position:absolute; width:58%; left:32%; top:90%; z-index:3; transition: transform .25s ease; }
 
   /* 浮動動畫 */
   @keyframes balloonFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)}}
@@ -101,8 +107,6 @@
   @keyframes burstFade { from{opacity:1} to{opacity:0} }
   .box-drop { animation: boxFall 2s cubic-bezier(.2,.8,.2,1) forwards; }
   @keyframes boxFall { 0%{transform:translateY(0);opacity:1} 85%{transform:translateY(555px);opacity:1} 100%{transform:translateY(592px);opacity:0} } /* 75~80% 的 740 高度 */
-  .box-tilt-drop     { transform: translateY(30px) rotate(-25deg); transition: transform .25s ease; }
-  .box-tilt-neg-drop { transform: translateY(30px) rotate(25deg);  transition: transform .25s ease; }
 
   /* 選單固定在黑框內上方置中 */
   #setPicker {
@@ -119,6 +123,34 @@
     appearance: none;
   }
   #setPicker select:focus{ outline: 2px solid rgba(200,16,46,.35); outline-offset: 2px; }
+
+/* --- Snow styles & animations --- */
+.snowWrap{
+  position:absolute;
+  top:-40px;                 /* 由畫面頂外面開始跌入嚟 */
+  pointer-events:none;
+  z-index: 20;               /* 喺樹/山前面、UI後面，可按需要改 */
+  animation: snow-sway 7s ease-in-out infinite alternate;
+}
+
+.snow{
+  position:absolute;
+  top:0;
+  /* left 0，真正嘅水平位置俾 .snowWrap 控制 */
+  left:0;
+  will-change: transform;
+  animation: snow-fall 10s linear forwards; /* duration 會喺 JS 覆蓋 */
+}
+
+@keyframes snow-fall {
+  from { transform: translateY(-50px); opacity: 0.95; }
+  to   { transform: translateY(800px); opacity: 0.95; } /* 800 > 740，確保跌出畫面 */
+}
+
+@keyframes snow-sway {
+  from { transform: translateX(0);   }
+  to   { transform: translateX(var(--amp, 24px)); }
+}
 
   /* 🎄 小圓形 Go 掣 */
   #setGoBtn {
@@ -169,13 +201,14 @@
       <button id="setGoBtn">Go</button>
     </div>
 
-    <div class="stage" id="stage">
-      <img id="flue" class="sprite" src="graphic/flue.png" alt="flue" />
-      <img id="santa" class="sprite" src="graphic/santa.png" alt="santa" />
-      <img id="bell" class="sprite" src="graphic/bell.png" alt="bell" />
-      <img id="treeLeft" class="sprite" src="graphic/tree.png" alt="tree left" />
-      <img id="treeBehind" class="sprite" src="graphic/tree.png" alt="tree behind santa" />
-    </div>
+<div class="stage" id="stage">
+  <img id="hill"  class="sprite" src="graphic/hill.png"  alt="hill" />
+  <img id="flue"  class="sprite" src="graphic/flue.png"  alt="flue" />
+  <img id="santa" class="sprite" src="graphic/santa.png" alt="santa" />
+  <img id="bell"  class="sprite" src="graphic/bell.png"  alt="bell" />
+  <img id="treeLeft"   class="sprite" src="graphic/tree.png" alt="tree left" />
+  <img id="treeBehind" class="sprite" src="graphic/tree.png" alt="tree behind santa" />
+</div>
 
     <!-- Finish 面板 -->
     <div id="finishPanel">
@@ -261,7 +294,15 @@ function withRootUnscaled(cb){
 function layout(){
   const stage = $('#stage'), flue = $('#flue'), santa = $('#santa'), bell = $('#bell');
   const treeLeft = $('#treeLeft'), treeBehind = $('#treeBehind');
+  const hill = $('#hill');
   const st = rect(stage);
+
+  // --- hill：齊底置中 ---
+  if (hill){
+    const hb = rect(hill);
+    hill.style.left = (st.width/2 - hb.width/2) + 'px';
+    hill.style.bottom = '0px';
+  }
 
   // flue 置中 + 偏移
   const flBox = rect(flue);
@@ -328,7 +369,7 @@ function applyScale(){
   const contentH = designH * scale;
 
   const leftPx = Math.round((FW - contentW) / 2);
-  const topPx  = Math.round((FH - contentH) / 2);
+  const topPx  = 0;
 
   root.style.left = leftPx + 'px';
   root.style.top  = topPx + 'px';
@@ -707,14 +748,26 @@ $('#setGoBtn').addEventListener('click', ()=>{
   function createSnowflake(stage){
     const wrap=document.createElement('div'); wrap.className='snowWrap';
     const flake=document.createElement('img'); flake.src='graphic/snow.png'; flake.alt='snow'; flake.className='snow';
-    const stR=rect(stage);
-    const sizePx=rnd(10,30); flake.style.width=sizePx+'px';
-    const leftPx=rnd(0, Math.max(0, stR.width - sizePx)); wrap.style.left=leftPx+'px';
-    const duration=rnd(6,12), delay=Math.random()*0.8; flake.style.animation=`snow-fall ${duration}s linear ${delay}s forwards`;
-    const amp=rnd(10,40), sway=rnd(5,11); wrap.style.setProperty('--amp', amp+'px'); wrap.style.animation=`snow-sway ${sway}s ease-in-out ${Math.random()}s infinite alternate`;
-    flake.style.transform=`rotate(${rnd(-25,25)}deg)`; flake.addEventListener('animationend', ()=>wrap.remove());
+const designWidth = 1280;   // 你的舞台原始寬度
+const sizePx = rnd(10,30);
+const leftPx = rnd(0, designWidth - sizePx);
+ flake.style.width = sizePx + 'px';
+wrap.style.left = leftPx + 'px';
+  const duration = rnd(6, 12);
+  const delay = Math.random() * 0.8;
+  flake.style.animation = `snow-fall ${duration}s linear ${delay}s forwards`;
+
+  const amp = rnd(10, 40);           // 左右擺幅
+  const sway = rnd(5, 11);           // 左右搖擺速度
+  wrap.style.setProperty('--amp', amp + 'px');
+  wrap.style.animation = `snow-sway ${sway}s ease-in-out ${Math.random()}s infinite alternate`;
+
+      flake.style.transform = `rotate(${rnd(-25,25)}deg)`;
+  flake.addEventListener('animationend', ()=> wrap.remove());
+
     wrap.appendChild(flake); stage.appendChild(wrap); return wrap;
   }
+
   function spawnSnowBatch(){ const stage=$('#stage'); const count=rnd(3,7); for(let i=0;i<count;i++) createSnowflake(stage); }
   function startSnow(){ spawnSnowBatch(); setInterval(spawnSnowBatch, rnd(800,1600)); }
 
