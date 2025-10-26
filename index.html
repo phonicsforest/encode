@@ -5,10 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Santa Flue – Multi Sets</title>
 <style>
-  html, body { height:100%; margin:0; overflow:hidden; }
-  
-.stage {
-    position:relative; width:100vw; height:100vh; overflow:hidden;
+  html, body { height:100%; margin:0; overflow:hidden; background:#bfe4f8; }
+
+  /* ====== 黑框容器（把所有東西關在框內）====== */
+  .frame{
+    position:fixed; inset:12px;                /* 可按需要調整邊距 */
+    border:10px solid #111; border-radius:8px;
+    box-sizing:border-box; overflow:hidden;
+    background:#cdeafb;
+  }
+
+  /* ====== 舞台 ====== */
+  .stage {
+    position:relative; width:100%; height:100%; overflow:hidden;
     background:url('graphic/background.png') center / cover no-repeat;
   }
 
@@ -41,11 +50,12 @@
   }
   .baubleLetter { color:#fff; font-weight:500; }
   .tree2-letter { color:#d01010; font-weight:700; }
+
   /* 選中：換 glow 圖 */
   .tree1-bauble.selected img{ content:url('graphic/redbauble_glow.png'); }
   .tree2-bauble.selected img{ content:url('graphic/whitebauble_glow.png'); }
 
-  /* 🎈 Balloon group */
+  /* 🎈 Balloon group（保持你設定） */
   .balloon-group{
     position:absolute; z-index:7;
     width:min(14vw, 260px);
@@ -54,147 +64,113 @@
   .balloon-group .balloon{ position:absolute; width:60%; height:auto; }
   #redBalloon{    left:20%; top:0%;   z-index:1; }
   #yellowBalloon{ left:50%; top:10%;  z-index:2; }
-  #giftBox{ pointer-events:auto; cursor:pointer; position:absolute; width:58%; left:33%; top:90%; z-index:3; transition: transform .25s ease; }
+  #giftBox{ pointer-events:auto; cursor:pointer; position:absolute; width:58%; left:25%; top:90%; z-index:3; transition: transform .25s ease; } /* ← 保留你最新預設 */
 
-/* 🪶 氣球飄浮動畫 */
-@keyframes balloonFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
-}
+  /* 🪶 氣球飄浮動畫 */
+  @keyframes balloonFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)}}
+  #redBalloon, #yellowBalloon, #giftBox { animation: balloonFloat 2.8s ease-in-out infinite; }
 
-#redBalloon, #yellowBalloon, #giftBox {
-  animation: balloonFloat 2.8s ease-in-out infinite;
-}
-
-
-  /* 入/出場（出場 2s，不透明） */
+  /* 入/出場 */
   #balloonGroup.enterRight { animation: groupInRight 1.6s ease-out forwards; }
   #balloonGroup.leaveLeft  { animation: groupOutLeft 2s ease-out forwards; }
   @keyframes groupInRight  { from { transform: translateX(60vw); } to { transform: translateX(0); } }
   @keyframes groupOutLeft  { from { transform: translateX(0); }    to { transform: translateX(-110vw); } }
-
-  /* *_b 極速漸隱 */
   .balloon-burst-fade { animation: burstFade .25s linear forwards; }
   @keyframes burstFade { from{opacity:1} to{opacity:0} }
-
-  /* GiftBox 掉落（2s） + 斜落 */
   .box-drop { animation: boxFall 2s cubic-bezier(.2,.8,.2,1) forwards; }
-  @keyframes boxFall {
-    0%   { transform: translateY(0); opacity:1; }
-    85%  { transform: translateY(75vh); opacity:1; }
-    100% { transform: translateY(80vh); opacity:0; }
-  }
+  @keyframes boxFall { 0%{transform:translateY(0);opacity:1} 85%{transform:translateY(75vh);opacity:1} 100%{transform:translateY(80vh);opacity:0} }
   .box-tilt-drop     { transform: translateY(30px) rotate(-25deg); transition: transform .25s ease; }
   .box-tilt-neg-drop { transform: translateY(30px) rotate(25deg);  transition: transform .25s ease; }
 
-  /* 選單：置中疊背景 */
+  /* 選單固定在黑框內上方置中 */
   #setPicker {
-    position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
     background: rgba(255,255,255,.85); border-radius: 8px; padding: 6px 10px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 100000; font-size: 14px; display:flex; gap:10px; align-items:center;
   }
-/* 下拉選單樣式（帶清晰邊框） */
-#setPicker select{
-  padding: 6px 12px;
-  border: 2px solid #2b2b2b;     /* 深色邊框（左邊就會見到） */
-  border-radius: 10px;
-  background: #fff;
-  color: #1f1f1f;
-  appearance: none;              /* 需要保留的話可刪 */
-}
-#setPicker select:focus{
-  outline: 2px solid rgba(200,16,46,.35);
-  outline-offset: 2px;
-}
+  #setPicker select{
+    padding: 6px 12px;
+    border: 2px solid #2b2b2b;
+    border-radius: 10px;
+    background: #fff;
+    color: #1f1f1f;
+    appearance: none;
+  }
+  #setPicker select:focus{ outline: 2px solid rgba(200,16,46,.35); outline-offset: 2px; }
 
-/* 🎄 小圓形 Go 掣 */
-#setGoBtn {
-  background: #c8102e;       /* 聖誕紅 */
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 38px;
-  height: 38px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: transform 0.2s ease, background 0.3s ease;
-}
-#setGoBtn:hover {
-  background: #e01e37;
-  transform: scale(1.1);
-}
-@keyframes bob {
-  0%{transform:translateY(0)}
-  50%{transform:translateY(-8px)}
-  100%{transform:translateY(0)}
-}
-/* 只要 balloonGroup 有 .float，三件物件一齊飄 */
-.balloon-group.float #redBalloon,
-.balloon-group.float #yellowBalloon,
-.balloon-group.float #giftBox{
-  animation:bob 2.6s ease-in-out infinite;
-}
+  /* 🎄 小圓形 Go 掣 */
+  #setGoBtn {
+    background:#c8102e; color:white; border:none; border-radius:50%;
+    width:38px; height:38px; font-weight:bold; cursor:pointer;
+    transition:transform .2s ease, background .3s ease;
+  }
+  #setGoBtn:hover { background:#e01e37; transform:scale(1.1); }
 
-  /* Finish 面板（收窄） */
-  #finishPanel{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background: transparent; z-index:9000;pointer-events:none; }
+  @keyframes bob { 0%{transform:translateY(0)} 50%{transform:translateY(-8px)} 100%{transform:translateY(0)} }
+  .balloon-group.float #redBalloon,
+  .balloon-group.float #yellowBalloon,
+  .balloon-group.float #giftBox{ animation:bob 2.6s ease-in-out infinite; }
+
+  /* Finish 面板 */
+  #finishPanel{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; background: transparent; z-index:9000; pointer-events:none; }
   #finishCard{
     background:transparent; border-radius:12px; padding:16px 18px;
     width:clamp(260px,15vw,380px); max-width:90vw;
-   font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial;
     text-align:center;
   }
-.balloon-group.leaver { z-index: 9; }  /* 舊組起飛時放到最上 */
-
-  #finishCard h2{ margin:.2em 0 .3em; font-size:30px;color:#8d0f0f;   /* 🔴 深紅色 */ }
+  .balloon-group.leaver { z-index: 9; }
+  #finishCard h2{ margin:.2em 0 .3em; font-size:30px;color:#8d0f0f; }
   #finishList{ font-size:20px; line-height:1.6; white-space:pre; margin-bottom:10px; }
   #playAgainBtn{ display:block; margin:6px auto 0; padding:8px 16px; border-radius:999px; border:2px solid #8d0f0f; background:#fff; color:#8d0f0f; font-weight:700; cursor:pointer; }
   #playAgainBtn:hover{ background:#8d0f0f; color:#fff; }
 </style>
 </head>
 <body>
- 
-  <!-- 選單 -->
-  <div id="setPicker">
-    <select id="setPickerSelect">
-      <option value="">-----</option>
-      <option value="0">Set 1</option>
-      <option value="1">Set 2</option>
-      <option value="2">Set 3</option>
-      <option value="3">Set 4</option>
-      <option value="4">Set 5</option>
-      <option value="5">Set 6</option>
-      <option value="6">Set 7</option>
-      <option value="7">Set 8</option>
-      <option value="8">Set 9</option>
-      <option value="9">Set 10</option>
-      
 
-    </select>
-    <button id="setGoBtn">Go</button>
-  </div>
+  <div class="frame" id="frame">
+    <!-- 選單（放在黑框內） -->
+    <div id="setPicker">
+      <select id="setPickerSelect">
+        <option value="">-----</option>
+        <option value="0">Set 1</option>
+        <option value="1">Set 2</option>
+        <option value="2">Set 3</option>
+        <option value="3">Set 4</option>
+        <option value="4">Set 5</option>
+        <option value="5">Set 6</option>
+        <option value="6">Set 7</option>
+        <option value="7">Set 8</option>
+        <option value="8">Set 9</option>
+        <option value="9">Set 10</option>
+      </select>
+      <button id="setGoBtn">Go</button>
+    </div>
 
-  <div class="stage" id="stage">
-    <img id="flue" class="sprite" src="graphic/flue.png" alt="flue" />
-    <img id="santa" class="sprite" src="graphic/santa.png" alt="santa" />
-    <img id="bell" class="sprite" src="graphic/bell.png" alt="bell" />
-    <img id="treeLeft" class="sprite" src="graphic/tree.png" alt="tree left" />
-    <img id="treeBehind" class="sprite" src="graphic/tree.png" alt="tree behind santa" />
-  </div>
+    <div class="stage" id="stage">
+      <img id="flue" class="sprite" src="graphic/flue.png" alt="flue" />
+      <img id="santa" class="sprite" src="graphic/santa.png" alt="santa" />
+      <img id="bell" class="sprite" src="graphic/bell.png" alt="bell" />
+      <img id="treeLeft" class="sprite" src="graphic/tree.png" alt="tree left" />
+      <img id="treeBehind" class="sprite" src="graphic/tree.png" alt="tree behind santa" />
+    </div>
 
-  <!-- Finish 面板 -->
-  <div id="finishPanel">
-    <div id="finishCard">
-      <h2>Finish!</h2>
-      <div id="finishList"></div>
+    <!-- Finish 面板 -->
+    <div id="finishPanel">
+      <div id="finishCard">
+        <h2>Finish!</h2>
+        <div id="finishList"></div>
+      </div>
     </div>
   </div>
 
 <script>
+  const AUDIO_PATH = 'audio/';   // 依你之前的做法保存路徑
   const SANTA_HAPPY = 'graphic/santa_happy.png';
   const SANTA_SAD   = 'graphic/santa_sad.png';
   const SANTA_NORM  = 'graphic/santa.png';
 
-  /* 你更新的 SETS（c → k） */
+  /* SETS */
   const SETS = [
     { reds: ['b','k','d','f','g','h','n'], whites: ['a'] },
     { reds: ['l','m','j','p','r','s','t'], whites: ['a'] },
@@ -206,7 +182,7 @@
     { reds: ['l','m','j','p','r','s','t'], whites: ['a','i','e','o'] },
     { reds: ['b','k','d','f','g','h','n'], whites: ['a','i','e','o','u'] },
     { reds: ['l','m','j','p','r','s','t'], whites: ['a','i','e','o','u'] },
-{ reds: ['b','k','d','f','g','h','n'], whites: ['A'] },
+    { reds: ['b','k','d','f','g','h','n'], whites: ['A'] },
     { reds: ['l','m','j','p','r','s','t'], whites: ['A'] },
     { reds: ['b','k','d','f','g','h','n'], whites: ['A','I'] },
     { reds: ['l','m','j','p','r','s','t'], whites: ['A','I'] },
@@ -216,8 +192,6 @@
     { reds: ['l','m','j','p','r','s','t'], whites: ['A','I','E','O'] },
     { reds: ['b','k','d','f','g','h','n'], whites: ['A','I','E','O','U'] },
     { reds: ['l','m','j','p','r','s','t'], whites: ['A','I','E','O','U'] },
-
-
   ];
 
   const $  = s => document.querySelector(s);
@@ -225,12 +199,12 @@
   const rect = el => el.getBoundingClientRect();
 
   let currentSetIndex = -1;
-  let queue = [];          // 出題佇列（會把錯題推到尾）
-  let basePairs = [];      // 初始順序（Finish 顯示用）
+  let queue = [];
+  let basePairs = [];
   let qPos = -1;
   let selectedRed = null, selectedWhite = null;
   let bellLocked = true;
-  const attemptsMap = new Map(); // pair -> 次數
+  const attemptsMap = new Map();
 
   /* 版面 */
   function layout(){
@@ -256,9 +230,6 @@
 
     const saMidX = (sa.left + sa.right)/2 - st.left;
     treeBehind.style.left = saMidX + 'px';
-
-    const tb = rect(treeBehind);
-    treeFront.style.left = (tb.left - st.left + tb.width/2) + 'px';
 
     if (currentSetIndex >= 0){
       buildTree1Baubles(SETS[currentSetIndex].reds);
@@ -396,23 +367,23 @@
     stage.appendChild(g);
 
     positionBalloonGroup();
-g.classList.add('enterRight','float'); // 👈 新題入場時先飄
+    g.classList.add('enterRight','float');
 
     const pair = getCurrentPair();
-    setTimeout(() => { playOnce(`audio/${pair}.mp3`); }, 1600);
+    setTimeout(() => { playOnce(`${AUDIO_PATH}${pair}.mp3`); }, 1600);
 
     box.addEventListener('click', ()=>{
       if (bellLocked) return;
-      playOnce(`audio/${pair}.mp3`);
+      playOnce(`${AUDIO_PATH}${pair}.mp3`);
     });
-
   }
+
   function positionBalloonGroup(){
     const g = $('#balloonGroup'); if (!g) return;
     const st = rect($('#stage'));
     const fl = rect($('#flue'));
     const gw = g.getBoundingClientRect().width || parseFloat(getComputedStyle(g).width);
-    const left = (fl.left - st.left) + fl.width/2 - gw/2 - 20;  /* 微調 -20 */
+    const left = (fl.left - st.left) + fl.width/2 - gw/2 - 20;
     const top  = Math.max(10, st.height * 0.10);
     g.style.left = left + 'px';
     g.style.top  = top  + 'px';
@@ -426,47 +397,30 @@ g.classList.add('enterRight','float'); // 👈 新題入場時先飄
     const span = node?.querySelector('.baubleLetter, .tree2-letter');
     return span ? span.textContent.trim().toLowerCase() : '';
   }
-// Fisher–Yates 洗牌
-function shuffle(a){
-  for (let i = a.length - 1; i > 0; i--){
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
+  function shuffle(a){
+    for (let i = a.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
   }
-  return a;
-}
+  function makeQueue(set){
+    const reds   = Array.isArray(set.reds)   ? [...set.reds]   : [];
+    const whites = Array.isArray(set.whites) ? [...set.whites] : [];
 
-// reds 亂序；whites 先「每個至少一次」，再隨機補滿到 reds.length，最後再洗牌配對
-function makeQueue(set){
-  const reds   = Array.isArray(set.reds)   ? [...set.reds]   : [];
-  const whites = Array.isArray(set.whites) ? [...set.whites] : [];
+    if (reds.length === 0) return [];
+    shuffle(reds); shuffle(whites);
+    if (whites.length === 0) whites.push('a');
 
-  if (reds.length === 0) return [];
-
-  shuffle(reds);
-  shuffle(whites);
-
-  // safety：如果 whites 意外為空，塞一個 'a'
-  if (whites.length === 0) whites.push('a');
-
-  const L = reds.length;
-
-  // ① 先拿到「每個 white 各一次」（最多拿到 L 個）
-  const mustHave = whites.slice(0, Math.min(whites.length, L));
-
-  // ② 不夠 L 的，用 whites 任抽補滿
-  const whSeq = [...mustHave];
-  while (whSeq.length < L){
-    whSeq.push( whites[Math.floor(Math.random() * whites.length)] );
+    const L = reds.length;
+    const mustHave = whites.slice(0, Math.min(whites.length, L));
+    const whSeq = [...mustHave];
+    while (whSeq.length < L){ whSeq.push( whites[Math.floor(Math.random() * whites.length)] ); }
+    shuffle(whSeq);
+    return reds.map((r, i) => ({ r, w: whSeq[i] }));
   }
-
-  // ③ 打散 white 次序，避免永遠 aeiou 排頭
-  shuffle(whSeq);
-
-  // ④ 配對
-  return reds.map((r, i) => ({ r, w: whSeq[i] }));
-}
   function getCurrentPair(){ const cur = queue[qPos]; return `${cur.r}${cur.w}`; }
-  function fadeBalloon(el, burstSrc, dur=25){
+  function fadeBalloon(el, burstSrc){
     return new Promise(resolve=>{
       if (!el) return resolve();
       el.src = burstSrc;
@@ -491,115 +445,91 @@ function makeQueue(set){
 
     if (qPos >= queue.length){ showFinish(); return; }
 
-    // 未做過就先置 0（之後按 submit 會 +1）
     const key = getCurrentPair();
     if (!attemptsMap.has(key)) attemptsMap.set(key, 0);
 
     spawnBalloonGroup();
     lockBell(false);
-
-
   }
 
   /* 提交 */
-/* 提交 */
-function submit(){
-  if (bellLocked) return;
+  function submit(){
+    if (bellLocked) return;
 
-  // 視覺 + 鐘聲（50%）
-  const bell = $('#bell');
-  bell.classList.add('bell-press');
-  setTimeout(()=>bell.classList.remove('bell-press'), 120);
-  (()=>{ const a=new Audio('audio/bell.mp3'); a.volume=0.5; a.play(); })();
+    // 鐘聲
+    const bell = $('#bell');
+    bell.classList.add('bell-press');
+    setTimeout(()=>bell.classList.remove('bell-press'), 120);
+    (()=>{ const a=new Audio(`${AUDIO_PATH}bell.mp3`); a.volume=0.5; a.play(); })();
 
-  if (qPos < 0 || !queue[qPos]) return;
-  if (!selectedRed || !selectedWhite) return;
+    if (qPos < 0 || !queue[qPos]) return;
+    if (!selectedRed || !selectedWhite) return;
 
-  lockBell(true);          // 按一次後到下一題先解鎖
-  unlockSetPicker();       // 任何時候都可選 set
+    lockBell(true);
+    unlockSetPicker();
 
-  const rb  = $('#redBalloon');
-  const yb  = $('#yellowBalloon');
-  const box = $('#giftBox');
+    const rb  = $('#redBalloon');
+    const yb  = $('#yellowBalloon');
+    const box = $('#giftBox');
 
-  const pair  = getCurrentPair();  // e.g. 'ka'
-  const wantR = pair[0], wantW = pair[1];
-  const gotR  = letterOf(selectedRed);
-  const gotW  = letterOf(selectedWhite);
+    const pair  = getCurrentPair();
+    const wantR = pair[0], wantW = pair[1];
+    const gotR  = letterOf(selectedRed);
+    const gotW  = letterOf(selectedWhite);
 
-  // 記「答咗幾次先啱」
-  attemptsMap.set(pair, (attemptsMap.get(pair) || 0) + 1);
+    attemptsMap.set(pair, (attemptsMap.get(pair) || 0) + 1);
 
-  const redOK   = (gotR === wantR);
-  const whiteOK = (gotW === wantW);
+    const redOK   = (gotR === wantR);
+    const whiteOK = (gotW === wantW);
 
-  const pop = ()=>{ try{ new Audio('audio/pop.mp3').play(); }catch(e){} };
+    const pop = ()=>{ try{ new Audio(`${AUDIO_PATH}pop.mp3`).play(); }catch(e){} };
 
-  if (redOK && whiteOK){
-    // ✅ 全中：停飄 → 兩個氣球漸隱 → 0.4s → gift 落盒（2s）→ 0.5s 後 Happy + 下一題
-    pop();
+    if (redOK && whiteOK){
+      pop();
+      const group = $('#balloonGroup');
+      group?.classList.remove('float');
 
-    // 停整組飄浮（包括 gift）
-    const group = $('#balloonGroup');
-    group?.classList.remove('float');
+      Promise.all([
+        fadeBalloon(rb, 'graphic/redballoonb.png'),
+        fadeBalloon(yb, 'graphic/yellowballoonb.png')
+      ]).then(()=>{
+        setTimeout(()=>{
+          if (box){
+            box.style.display = '';
+            box.classList.remove('box-tilt-drop','box-tilt-neg-drop');
+            box.style.animation = 'none';
+            void box.offsetWidth;
+            box.style.animation = 'boxFall 2s cubic-bezier(.2,.8,.2,1) forwards';
 
-    Promise.all([
-      fadeBalloon(rb, 'graphic/redballoonb.png', 250),
-      fadeBalloon(yb, 'graphic/yellowballoonb.png', 250)
-    ]).then(()=>{
-      setTimeout(()=>{                      // 等氣球收一收
-        if (box){
-          box.style.display = '';
-          // 清任何傾斜／舊動畫
-          box.classList.remove('box-tilt-drop','box-tilt-neg-drop');
-          box.style.animation = 'none';
-          void box.offsetWidth;             // 強制 reflow
-          // 直接用 inline animation 開始下墜（最穩陣）
-          box.style.animation = 'boxFall 2s cubic-bezier(.2,.8,.2,1) forwards';
+            setTimeout(()=>{ swapSanta(SANTA_HAPPY, 500); nextQuestion(); }, 500);
 
-          // 掉 0.5s → Happy，同步出下一題
-          setTimeout(()=>{
-            swapSanta(SANTA_HAPPY, 500);
-            nextQuestion();
-          }, 500);
+            box.addEventListener('animationend', ()=>{
+              box.style.display = 'none';
+              box.style.animation = '';
+            }, { once:true });
+          }else{
+            setTimeout(()=> swapSanta(SANTA_HAPPY, 500), 500);
+            setTimeout(nextQuestion, 100);
+          }
+        }, 400);
+      });
 
-          // 動畫完成先隱藏盒，並清回 animation
-          box.addEventListener('animationend', ()=>{
-            box.style.display = 'none';
-            box.style.animation = '';
-          }, { once:true });
-        }else{
-          // 理論上不會無盒，但保險
-          setTimeout(()=> swapSanta(SANTA_HAPPY, 500), 500);
-          setTimeout(nextQuestion, 100);
-        }
-      }, 400);
-    });
-
-  } else {
-    // ❌ 唔係全中：題目排到隊尾，照舊飛走（不停止飄浮）
-    queue.push(queue[qPos]);
-
-    // 清傾斜 class（避免殘留角度）
-    if (box) box.classList.remove('box-drop','box-tilt-drop','box-tilt-neg-drop');
-
-    // 直接飛走；飛 0.7s 會觸發 sad（flyOutToLeft 內處理）
-    flyOutToLeft(null, true);
+    } else {
+      queue.push(queue[qPos]);
+      if (box) box.classList.remove('box-drop','box-tilt-drop','box-tilt-neg-drop');
+      flyOutToLeft(null, true);
+    }
   }
-}
- 
 
   function flyOutToLeft(after, makeSad){
     const g = $('#balloonGroup'); if (!g){ if(after) after(); return; }
     g.classList.remove('enterRight');
-g.classList.add('leaver'); 
-    g.classList.add('leaveLeft');
+    g.classList.add('leaver','leaveLeft');
     if (makeSad){
-     setTimeout(() => {
-  swapSanta(SANTA_SAD, 1200);
-  // ✅ 立刻出下一題（舊組繼續飛走，我哋只係提早出新題）
-  nextQuestion();
-}, 700);
+      setTimeout(() => {
+        swapSanta(SANTA_SAD, 1200);
+        nextQuestion();                 // 舊組繼續飛走，新題先出
+      }, 700);
     }
     g.addEventListener('animationend', ()=>{ g.remove(); if (after) after(); }, {once:true});
   }
@@ -608,15 +538,13 @@ g.classList.add('leaver');
     const s = $('#santa'); s.src = to; setTimeout(()=>{ s.src = SANTA_NORM; }, ms);
   }
 
-  /* Finish：列出所有題目（幾多次先啱） */
   function showFinish(){
     const lines = basePairs.map(p => `${p}   x   ${attemptsMap.get(p) ? attemptsMap.get(p) : 1}`);
     $('#finishList').textContent = lines.join('\n');
     $('#finishPanel').style.display = 'flex';
-  lockBell(true);
-unlockSetPicker();
-
-}
+    lockBell(true);
+    unlockSetPicker();
+  }
 
   /* 事件 */
   $('#bell').addEventListener('click', submit);
@@ -627,29 +555,26 @@ unlockSetPicker();
     if (val === '') return;
 
     currentSetIndex = parseInt(val, 10);
-    // reset
     attemptsMap.clear();
     $('#finishPanel').style.display = 'none';
     qPos = -1;
 
-    // 畫 baubles
     buildTree1Baubles(SETS[currentSetIndex].reds);
     buildTree2Baubles(SETS[currentSetIndex].whites);
 
-    // 起題（建立 queue + basePairs）
     queue = makeQueue(SETS[currentSetIndex]);
     basePairs = queue.map(q => `${q.r}${q.w}`);
 
     nextQuestion();
   });
 
-// 🟢 永遠確保選單可以用
-function unlockSetPicker() {
-  const picker = document.querySelector('#setPicker select');
-  const btn = document.querySelector('#setGoBtn');
-  if (picker) picker.removeAttribute('disabled');
-  if (btn) btn.removeAttribute('disabled');
-}
+  // 永遠確保選單可以用
+  function unlockSetPicker() {
+    const picker = document.querySelector('#setPicker select');
+    const btn = document.querySelector('#setGoBtn');
+    if (picker) picker.removeAttribute('disabled');
+    if (btn) btn.removeAttribute('disabled');
+  }
 
   /* 雪花 & 初始 */
   function whenImagesReady(images, cb){
@@ -683,11 +608,9 @@ function unlockSetPicker() {
     window.addEventListener('resize', layout);
     window.addEventListener('orientationchange', layout);
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) startSnow();
-    lockBell(true); // 未開始前不可按
-unlockSetPicker();
-
+    lockBell(true);
+    unlockSetPicker();
   });
 </script>
 </body>
 </html>
-
