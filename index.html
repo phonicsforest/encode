@@ -3,76 +3,66 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Santa Flue – Fixed 1280×740</title>
+<title>Santa Game</title>
 <style>
   html, body { height:100%; margin:0; background:#bdd7ee; }
 
-  /* ====== 固定舞台外框：1280×740，水平置中、貼近上方 ====== */
-/* 讓 frame 以「高度」自動縮小（你的需求） */
-.frame{
-  height:100dvh;
-height:100vh;
-  aspect-ratio:1280/740;
-  width:auto;
-  margin:0 auto;
-  position:relative;
-  border:none;            /* ← 去黑邊 */
-  border-radius:0;        /* 可要可不要 */
-  box-sizing:border-box;
-  overflow:hidden;
-  background:#bdd7ee;     /* 與頁面同色 */
-}
-.frame{ min-height: 360px; }
-#scaleRoot{ min-width: 640px; min-height: 370px; }
+  .frame{
+    height:100vh;
+    aspect-ratio:1280/740;
+    width:auto;
+    margin:0 auto;
+    position:relative;
+    overflow:hidden;
+    background:#bdd7ee;
+    min-height:360px;
+  }
 
+  #scaleRoot{
+    position:absolute;
+    width:1280px;
+    height:740px;
+    left:0; top:0;
+    transform-origin: top left;
+    transform: scale(1);
+    min-width:640px; min-height:370px;
+  }
 
-/* 設計座標系：所有定位仍用 1280×740 的 px */
-#scaleRoot{
-  position:absolute;
-  width:1280px;
-  height:740px;
-  left:0;                 /* 交俾 JS 設置，先置 0 */
-  top:0;                  /* 交俾 JS 設置，先置 0 */
-  transform-origin: top left;
-  transform: scale(1);    /* translateX 不再需要 */
-}
-
-  /* ====== 舞台（同樣固定 1280×740） ====== */
-.stage { position:relative; width:100%; height:100%; overflow:hidden; background:none; }
-
-  /* ====== Sprites（把原本 vh/vw 換算成固定 px） ====== */
+  .stage { position:relative; width:100%; height:100%; overflow:hidden; }
   .sprite { position:absolute; user-select:none; -webkit-user-drag:none; pointer-events:none; height:auto; }
 
-  /* 以 1280×740 為基準：
-     flue:  min(15vh, 38vw)   -> 0.15*740 = 111px
-     santa: min(50vh, 42vw)   -> 0.50*740 = 370px
-     treeL: min(90vh, 90vw)   -> 0.90*740 = 666px
-     treeB: min(100vh,100vw)  -> 1.00*740 = 740px
-     treeF: min(40vh, 40vw)   -> 0.40*740 = 296px
-     bell:  min(18vh, 18vw)   -> 0.18*740 = 133px
-  */
+  /* 基準尺寸 */
   #flue  { height:111px; z-index:20; bottom:0; }
-  #santa { height:300px; z-index:100;  bottom:0; }
- #hill{
-  position:absolute;
-  bottom:0;
-  left:50%;
-  transform:translateX(20%) scale(1.5); /* ← 放大1.5倍 */
-  transform-origin:bottom center;         /* 保持底部齊 */
-  z-index:0;
-}
+  #santa { height:300px; z-index:160; bottom:0; }
   #treeLeft   { height:666px; z-index:3; bottom:0; }
   #treeBehind { height:740px; z-index:2; bottom:0; }
   #treeFront  { height:296px; z-index:1; bottom:0; }
-  #bell { height:133px; z-index:5; transform:rotate(-30deg); pointer-events:auto; transition:transform .15s ease, filter .2s ease; bottom:40px; }
+#bell {
+  height:133px;
+  z-index:200;              /* 提升到最前 */
+  transform:rotate(-30deg);
+  pointer-events:auto;
+  transition:transform .15s ease, filter .2s ease;
+  bottom:40px;
+}
   #bell:hover { transform:rotate(-20deg) scale(1.08); filter:brightness(1.15); }
   #bell.bell-press { transform:rotate(-20deg) scale(1.05); filter:brightness(1.1); }
   #bell[disabled]{ pointer-events:none; filter:none; opacity:1; }
 
-  /* ====== 樹飾物 ====== */
+  #hill{
+    position:absolute;
+    bottom:0;
+    left:50%;
+    transform:translateX(20%) scale(1.5);
+    transform-origin:bottom center;
+    z-index:0;
+  }
+
+  /* 樹飾物 */
   .tree1-bauble, .tree2-bauble { position:absolute; z-index:4; aspect-ratio:1/1; cursor:pointer; transform: scale(1.5); transition: transform .18s ease; }
   .tree1-bauble:hover, .tree2-bauble:hover { transform: scale(1.6); }
-  .tree1-bauble img, .tree2-bauble img { width:100%; height:100%; object-fit:contain; display:block; }
+  .bauble-base{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; display:block; z-index:1; }
+  .letter-layer{ position:absolute; z-index:2; }
   .baubleLetter, .tree2-letter {
     position:absolute; left:50%; bottom:12%; transform:translateX(-50%);
     font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, "PingFang HK";
@@ -80,35 +70,31 @@ height:100vh;
   }
   .baubleLetter { color:#fff; font-weight:500; }
   .tree2-letter { color:#d01010; font-weight:700; }
-  .tree1-bauble.selected img{ content:url('graphic/redbauble_glow.png'); }
-  .tree2-bauble.selected img{ content:url('graphic/whitebauble_glow.png'); }
 
-  /* ====== 🎈 Balloon group（保持你設定，換成固定 px） ====== */
-  .balloon-group{
-    position:absolute; z-index:7;
-    width:200px;             /* min(14vw,260px) -> 14% x 1280 = 179.2 */
-    aspect-ratio:1/1; pointer-events:none;
-  }
+  .tree1-bauble.selected [data-role="base"]{ content:url('graphic/redbauble_glow.png'); }
+  .tree2-bauble.selected [data-role="base"].wb-default{ content:url('graphic/whitebauble_glow.png'); }
+  /* 特製白球 glow 在 JS 會直接換 src */
+
+  /* 🎈 Balloon group */
+.balloon-group{ position:absolute; z-index:19; width:200px; aspect-ratio:1/1; pointer-events:none; }
   .balloon-group .balloon{ position:absolute; width:60%; height:auto; }
   #redBalloon{    left:20%; top:0%;   z-index:1; }
   #yellowBalloon{ left:50%; top:10%;  z-index:2; }
-  #giftBox{ left:40%; pointer-events:auto; cursor:pointer; position:absolute; width:58%; left:32%; top:90%; z-index:3; transition: transform .25s ease; }
+  #giftBox{ left:32%; top:90%; pointer-events:auto; cursor:pointer; position:absolute; width:58%; z-index:3; transition: transform .25s ease; }
 
-  /* 浮動動畫 */
   @keyframes balloonFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)}}
   #redBalloon, #yellowBalloon, #giftBox { animation: balloonFloat 2.8s ease-in-out infinite; }
 
-  /* 入/出場 */
   #balloonGroup.enterRight { animation: groupInRight 1.6s ease-out forwards; }
   #balloonGroup.leaveLeft  { animation: groupOutLeft 2s ease-out forwards; }
-  @keyframes groupInRight  { from { transform: translateX(60vw); } to { transform: translateX(0); } } /* 用 transform，不影響尺寸 */
+  @keyframes groupInRight  { from { transform: translateX(60vw); } to { transform: translateX(0); } }
   @keyframes groupOutLeft  { from { transform: translateX(0); }    to { transform: translateX(-110vw); } }
   .balloon-burst-fade { animation: burstFade .25s linear forwards; }
   @keyframes burstFade { from{opacity:1} to{opacity:0} }
   .box-drop { animation: boxFall 2s cubic-bezier(.2,.8,.2,1) forwards; }
-  @keyframes boxFall { 0%{transform:translateY(0);opacity:1} 85%{transform:translateY(555px);opacity:1} 100%{transform:translateY(592px);opacity:0} } /* 75~80% 的 740 高度 */
+  @keyframes boxFall { 0%{transform:translateY(0);opacity:1} 85%{transform:translateY(555px);opacity:1} 100%{transform:translateY(592px);opacity:0} }
 
-  /* 選單固定在黑框內上方置中 */
+  /* Set 選單（放在 scaleRoot 內；跟 flue/balloon 同中心線） */
   #setPicker {
     position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
     background: rgba(255,255,255,.85); border-radius: 8px; padding: 6px 10px;
@@ -123,36 +109,6 @@ height:100vh;
     appearance: none;
   }
   #setPicker select:focus{ outline: 2px solid rgba(200,16,46,.35); outline-offset: 2px; }
-
-/* --- Snow styles & animations --- */
-.snowWrap{
-  position:absolute;
-  top:-40px;                 /* 由畫面頂外面開始跌入嚟 */
-  pointer-events:none;
-  z-index: 20;               /* 喺樹/山前面、UI後面，可按需要改 */
-  animation: snow-sway 7s ease-in-out infinite alternate;
-}
-
-.snow{
-  position:absolute;
-  top:0;
-  /* left 0，真正嘅水平位置俾 .snowWrap 控制 */
-  left:0;
-  will-change: transform;
-  animation: snow-fall 10s linear forwards; /* duration 會喺 JS 覆蓋 */
-}
-
-@keyframes snow-fall {
-  from { transform: translateY(-50px); opacity: 0.95; }
-  to   { transform: translateY(800px); opacity: 0.95; } /* 800 > 740，確保跌出畫面 */
-}
-
-@keyframes snow-sway {
-  from { transform: translateX(0);   }
-  to   { transform: translateX(var(--amp, 24px)); }
-}
-
-  /* 🎄 小圓形 Go 掣 */
   #setGoBtn {
     background:#c8102e; color:white; border:none; border-radius:50%;
     width:38px; height:38px; font-weight:bold; cursor:pointer;
@@ -160,144 +116,180 @@ height:100vh;
   }
   #setGoBtn:hover { background:#e01e37; transform:scale(1.1); }
 
-  @keyframes bob { 0%{transform:translateY(0)} 50%{transform:translateY(-8px)} 100%{transform:translateY(0)} }
-  .balloon-group.float #redBalloon,
-  .balloon-group.float #yellowBalloon,
-  .balloon-group.float #giftBox{ animation:bob 2.6s ease-in-out infinite; }
+  /* Finish */
+  #finishPanel{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:transparent; z-index:9000; pointer-events:none; }
+#finishCard{
+  position:absolute;
+  top:50%;
+  /* 關鍵：左邊位置用 JS 設定（flue 中心），這裡只負責置中＋放大 */
+  transform: translate(-50%, -50%) scale(1.4);  /* ← 放大 40% */
+  transform-origin: center;
+  text-align:center;
+}
+#finishList{
+  font-size:20px;
+  line-height:1.6;
+  white-space:pre;        /* 逐行顯示 */
+  text-align:center;      /* 文字置中 */
+  margin-bottom:10px;
+}
+#finishCard h2{
+  margin:.2em 0 .3em;
+  font-size:30px;
+  color:#8d0f0f;          /* 深紅 */
+}
+  .tree-overlay{ position:absolute; z-index:4; pointer-events:auto; }
+  .tree-overlay .tree1-bauble, .tree-overlay .tree2-bauble{ pointer-events:auto; }
 
-  /* Finish 面板 */
-  #finishPanel{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; background: transparent; z-index:9000; pointer-events:none; }
-  #finishCard{
-    background:transparent; border-radius:12px; padding:16px 18px;
-    width:340px; max-width:90%;
-    font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial; text-align:center;
-  }
-  .balloon-group.leaver { z-index: 9; }
-  #finishCard h2{ margin:.2em 0 .3em; font-size:30px;color:#8d0f0f; }
-  #finishList{ font-size:20px; line-height:1.6; white-space:pre; margin-bottom:10px; }
-  #playAgainBtn{ display:block; margin:6px auto 0; padding:8px 16px; border-radius:999px; border:2px solid #8d0f0f; background:#fff; color:#8d0f0f; font-weight:700; cursor:pointer; }
-  #playAgainBtn:hover{ background:#8d0f0f; color:#fff; }
+  /* Snow */
+  .snowWrap{ position:absolute; top:-40px; pointer-events:none; z-index:20; animation: snow-sway 7s ease-in-out infinite alternate; }
+  .snow{ position:absolute; top:0; left:0; will-change: transform; animation: snow-fall 10s linear forwards; }
+  @keyframes snow-fall { from { transform: translateY(-50px); opacity: 0.95; } to { transform: translateY(800px); opacity: 0.95; } }
+  @keyframes snow-sway { from { transform: translateX(0); } to { transform: translateX(var(--amp, 24px)); } }
 </style>
 </head>
 <body>
 
   <div class="frame" id="frame">
-    <!-- 選單（放在黑框內） -->
- <div id="scaleRoot">
-    <div id="setPicker">
-      <select id="setPickerSelect">
-        <option value="">-----</option>
-        <option value="0">Set 1</option>
-        <option value="1">Set 2</option>
-        <option value="2">Set 3</option>
-        <option value="3">Set 4</option>
-        <option value="4">Set 5</option>
-        <option value="5">Set 6</option>
-        <option value="6">Set 7</option>
-        <option value="7">Set 8</option>
-        <option value="8">Set 9</option>
-        <option value="9">Set 10</option>
-      </select>
-      <button id="setGoBtn">Go</button>
-    </div>
-
-<div class="stage" id="stage">
-  <img id="hill"  class="sprite" src="graphic/hill.png"  alt="hill" />
-  <img id="flue"  class="sprite" src="graphic/flue.png"  alt="flue" />
-  <img id="santa" class="sprite" src="graphic/santa.png" alt="santa" />
-  <img id="bell"  class="sprite" src="graphic/bell.png"  alt="bell" />
-  <img id="treeLeft"   class="sprite" src="graphic/tree.png" alt="tree left" />
-  <img id="treeBehind" class="sprite" src="graphic/tree.png" alt="tree behind santa" />
-</div>
-
-    <!-- Finish 面板 -->
-    <div id="finishPanel">
-      <div id="finishCard">
-        <h2>Finish!</h2>
-        <div id="finishList"></div>
+    <div id="scaleRoot">
+      <div id="setPicker">
+ <select id="setPickerSelect">
+<option value="">-----</option>
+<option value="0">SET 1 -- a</option>
+<option value="1">SET 2 -- a i</option>
+<option value="2">SET 3 -- a i e</option>
+<option value="3">SET 4 -- a i e o</option>
+<option value="4">SET 5 -- a i e o u</option>
+<option value="5">SET 6 -- a e</option>
+<option value="6">SET 7 -- ic A</option>
+<option value="7">SET 8 -- ic A E</option>
+<option value="8">SET 9 -- ic A E I</option>
+<option value="9">SET 10 -- ic A E I O</option>
+<option value="10">SET 11 -- E i</option>
+<option value="11">SET 12 -- E U</option>
+<option value="12">SET 13 -- U i_e ing</option>
+<option value="13">SET 14 -- U i_e ing ue</option>
+<option value="14">SET 15 -- U i_e ing ue or</option>
+<option value="15">SET 16 -- ir or oi</option>
+<option value="16">SET 17 -- ir or oi ou</option>
+<option value="17">SET 18 -- ir or oi ou ue</option>
+        </select>
+        <button id="setGoBtn">Go</button>
       </div>
+
+      <div class="stage" id="stage">
+        <img id="hill"      class="sprite" src="graphic/hill.png"   alt="hill" />
+        <img id="flue"      class="sprite" src="graphic/flue.png"   alt="flue" />
+        <img id="santa"     class="sprite" src="graphic/santa.png"  alt="santa" />
+        <img id="bell"      class="sprite" src="graphic/bell.png"   alt="bell" />
+        <img id="treeLeft"  class="sprite" src="graphic/tree.png"   alt="tree left" />
+        <img id="treeBehind"class="sprite" src="graphic/tree.png"   alt="tree right" />
+      </div>
+
+      <div id="finishPanel"><div id="finishCard"><h2>Finish!</h2><div id="finishList"></div></div></div>
     </div>
-</div>
   </div>
 
 <script>
-  const AUDIO_PATH = 'audio/';
-  const SANTA_HAPPY = 'graphic/santa_happy.png';
-  const SANTA_SAD   = 'graphic/santa_sad.png';
-  const SANTA_NORM  = 'graphic/santa.png';
 
-  const SETS = [
-    { reds: ['b','k','d','f','g','h','n'], whites: ['a'] },
-    { reds: ['l','m','j','p','r','s','t'], whites: ['a'] },
-    { reds: ['b','k','d','f','g','h','n'], whites: ['a','i'] },
-    { reds: ['l','m','j','p','r','s','t'], whites: ['a','i'] },
-    { reds: ['b','k','d','f','g','h','n'], whites: ['a','i','e'] },
-    { reds: ['l','m','j','p','r','s','t'], whites: ['a','i','e'] },
-    { reds: ['b','k','d','f','g','h','n'], whites: ['a','i','e','o'] },
-    { reds: ['l','m','j','p','r','s','t'], whites: ['a','i','e','o'] },
-    { reds: ['b','k','d','f','g','h','n'], whites: ['a','i','e','o','u'] },
-    { reds: ['l','m','j','p','r','s','t'], whites: ['a','i','e','o','u'] },
-    { reds: ['b','k','d','f','g','h','n'], whites: ['A'] },
-    { reds: ['l','m','j','p','r','s','t'], whites: ['A'] },
-    { reds: ['b','k','d','f','g','h','n'], whites: ['A','I'] },
-    { reds: ['l','m','j','p','r','s','t'], whites: ['A','I'] },
-    { reds: ['b','k','d','f','g','h','n'], whites: ['A','I','E'] },
-    { reds: ['l','m','j','p','r','s','t'], whites: ['A','I','E'] },
-    { reds: ['b','k','d','f','g','h','n'], whites: ['A','I','E','O'] },
-    { reds: ['l','m','j','p','r','s','t'], whites: ['A','I','E','O'] },
-    { reds: ['b','k','d','f','g','h','n'], whites: ['A','I','E','O','U'] },
-    { reds: ['l','m','j','p','r','s','t'], whites: ['A','I','E','O','U'] },
-  ];
+/* ================= 常量與資料 ================= */
+const AUDIO_PATH = 'audio/';
+const SANTA_HAPPY = 'graphic/santa_happy.png';
+const SANTA_SAD   = 'graphic/santa_sad.png';
+const SANTA_NORM  = 'graphic/santa.png';
 
-  const $  = s => document.querySelector(s);
-  const $$ = s => Array.from(document.querySelectorAll(s));
-  const rect = el => el.getBoundingClientRect();
-
-  let currentSetIndex = -1;
-  let queue = [];
-  let basePairs = [];
-  let qPos = -1;
-  let selectedRed = null, selectedWhite = null;
-  let bellLocked = true;
-  const attemptsMap = new Map();
+/* Set 定義 */
+const SETS = [
+  { reds: ['b','k','d','f','g','h','n'], whites: ['a'] },
+  { reds: ['l','m','j','p','r','s','t'], whites: ['a','i'] },
+  { reds: ['b','k','d','f','g','h','n'], whites: ['a','i','e'] },
+  { reds: ['l','m','j','p','r','s','t'], whites: ['a','i','e','o'] },
+  { reds: ['b','k','d','f','g','h','n'], whites: ['a','i','e','o','u'] },
+  { reds: ['l','m','j','p','r','s','t'], whites: ['a','e'] },
+  { reds: ['l','m','j','p','r','s','t'], whites: ['ic','A'] },
+  { reds: ['b','k','d','f','g','h','n'], whites: ['ic','A','E'] },
+  { reds: ['l','m','j','p','r','s','t'], whites: ['ic','A','E','I'] },
+  { reds: ['b','k','d','f','g','h','n'], whites: ['ic','A','E','I','O'] },
+  { reds: ['b','k','d','f','g','h','n'], whites: ['E','i'] },
+  { reds: ['b','k','d','f','g','h','n'], whites: ['E','U'] },
+  { reds: ['l','m','j','p','r','s','t'], whites: ['U','ite','eng'] },
+  { reds: ['l','m','j','p','r','s','t'], whites: ['U','ite','eng','ue'] },
+  { reds: ['b','k','d','f','g','h','n'], whites: ['U','ite','eng','ue','or'] },
+  { reds: ['l','m','j','p','r','s','t'], whites: ['ir','or','oi']},
+  { reds: ['b','k','d','f','g','h','n'], whites: ['ir','or','oi','ou'] },
+  { reds: ['l','m','j','p','r','s','t'], whites: ['ir','or','oi','ou','ue']},
+]
 
 
 
-// 以 1280×740 設計座標的偏移值（+ 向右 / 向上；- 向左 / 向下）
+
+/* 工具 */
+const $  = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const rect = el => el.getBoundingClientRect();
+
+/* 狀態 */
+let currentSetIndex = -1;
+let queue = [];
+let basePairs = [];
+let qPos = -1;
+let selectedRed = null, selectedWhite = null;
+let bellLocked = true;
+const attemptsMap = new Map();
+
+/* 位置偏移（還原你之前喜歡的相對位） */
 const OFF = {
-  set:        { x: -50,   y: 0 },   // 上方 Set 選單
-  leftTree:   { x: 0,   y: 0 },   // 左樹
-  rightTree:  { x: -40, y: 0 },   // 例：右樹左移 60px
-  flue:       { x: -50,   y: 0 },   // 煙囪
-  santa:      { x: -80,   y: 0 },   // 聖誕老人
-  bell:       { x: 0,   y: 0 }    // 鐘（注意：我只改 left/bottom，不動 transform）
+  flue:     { x: -50,  y: 0 },   // flue 向左 50px
+  set:      { x: -50,  y: 0 },   // Set 跟 flue 同一中心線
+  leftTree: { x: 0,    y: 0 },
+  rightTree:{ x: -40,  y: 0 },   // 右樹靠近 Santa
+  santa:    { x: -20,    y: 0 },   // 以 flue 右邊為基準「貼住」→ 0
+  bell:     { x: 0,    y: 0 }    // 依 Santa 中線
 };
 
-function withRootUnscaled(cb){
-  const root = document.getElementById('scaleRoot');
-  const prevT = root.style.transform;
-  const prevL = root.style.left;
-  const prevTp= root.style.top;
+/* bauble spots（百分比） */
+const SPOTS_LEFT  = [
+  {x:.50, y:.08}, {x:.68, y:.28}, {x:.34, y:.38},
+  {x:.70, y:.50}, {x:.20, y:.60}, {x:.90, y:.70}, {x:.50, y:.76}
+];
+const SPOTS_RIGHT = [
+  {x:.49, y:.18}, {x:.70, y:.36}, {x:.31, y:.40},
+  {x:.62, y:.57}, {x:.83, y:.75}, {x:.88, y:.66}, {x:.52, y:.72}
+];
 
-  root.style.transform = 'scale(1)';
-  root.style.left = '0px';
-  root.style.top  = '0px';
+/* 白球圖片 token（有獨立貼圖檔） */
+const WHITE_IMG_TOKENS = new Set(['ic','ite','eng','ue','or','ir','ou','oi']);
 
-  try { cb(); } finally {
-    root.style.transform = prevT;
-    root.style.left = prevL;
-    root.style.top  = prevTp;
+/* 產生白球底圖 src（一般/Glow） */
+function whiteSrc(token, glow=false){
+  const t = String(token||'').trim();
+  if (WHITE_IMG_TOKENS.has(t.toLowerCase())) {
+    return glow ? `graphic/whitebauble_glow${t}.png` : `graphic/whitebauble${t}.png`;
   }
+  return glow ? 'graphic/whitebauble_glow.png' : 'graphic/whitebauble.png';
 }
 
-  /* ========== 版面定位（1280×740 座標系） ========== */
+function positionFinish(){
+  const panel = document.getElementById('finishPanel');
+  if (!panel || panel.style.display === 'none') return;
+
+  const card = document.getElementById('finishCard');
+  const st = rect(document.getElementById('stage'));
+  const fl = rect(document.getElementById('flue'));
+
+  // 以 stage 作座標系，取 flue 的正中
+  const flCenterX = (fl.left - st.left) + fl.width/2 +45;
+
+  card.style.left = flCenterX + 'px';
+}
+
+/* ========== 版面定位（只計 1280×740 原尺寸） ========== */
 function layout(){
   const stage = $('#stage'), flue = $('#flue'), santa = $('#santa'), bell = $('#bell');
-  const treeLeft = $('#treeLeft'), treeBehind = $('#treeBehind');
+  const treeLeft = $('#treeLeft'), treeRight = $('#treeBehind');
   const hill = $('#hill');
   const st = rect(stage);
 
-  // --- hill：齊底置中 ---
   if (hill){
     const hb = rect(hill);
     hill.style.left = (st.width/2 - hb.width/2) + 'px';
@@ -311,401 +303,416 @@ function layout(){
   flue.style.bottom = (0 + OFF.flue.y) + 'px';
   const fl = rect(flue);
 
-  // santa 依 flue 右邊 + 偏移
+  // Santa 貼 flue 右邊
   santa.style.left   = (fl.right - st.left + OFF.santa.x) + 'px';
   santa.style.bottom = (0 + OFF.santa.y) + 'px';
 
   const sa = rect(santa);
   const saMid = (sa.left + sa.right)/2 - st.left;
 
-  // bell 依 santa 中線 + 偏移
+  // Bell 依 Santa 中線
   bell.style.left   = (saMid + 120 + OFF.bell.x) + 'px';
   bell.style.bottom = (40 + OFF.bell.y) + 'px';
 
-  // 左樹：依 flue 左邊 + 偏移
+  // 左樹：依 flue 左邊
   const tl = rect(treeLeft);
   const baseLeftL = fl.left - st.left - tl.width;
-  treeLeft.style.left   = (baseLeftL + OFF.leftTree.x) + 'px';   // ⬅️ 拔走 Math.max(0, …)
+  treeLeft.style.left   = (baseLeftL + OFF.leftTree.x) + 'px';
   treeLeft.style.bottom = (0 + OFF.leftTree.y) + 'px';
 
-  // 右樹：依 santa 中線 + 偏移
-  const saMidX = (sa.left + sa.right)/2 - st.left;
-  treeBehind.style.left   = (saMidX + OFF.rightTree.x) + 'px';
-  treeBehind.style.bottom = (0 + OFF.rightTree.y) + 'px';
+  // 右樹：依 Santa 中線
+  treeRight.style.left   = (saMid + OFF.rightTree.x) + 'px';
+  treeRight.style.bottom = (0 + OFF.rightTree.y) + 'px';
 
-  // Set 選單 + 偏移
+  // Set 選單與 flue 同中心線
   const picker = $('#setPicker');
   if (picker){
     picker.style.left = `calc(50% + ${OFF.set.x}px)`;
     picker.style.top  = (10 + OFF.set.y) + 'px';
+    picker.style.transform = 'translateX(-50%)';
   }
 
+  // 建 baubles
   if (currentSetIndex >= 0){
-    buildTree1Baubles(SETS[currentSetIndex].reds);
-    buildTree2Baubles(SETS[currentSetIndex].whites);
+    const set = SETS[currentSetIndex];
+    buildTreeBaubles('#treeLeft',   set.reds,   SPOTS_LEFT,  false);
+    buildTreeBaubles('#treeBehind', set.whites, SPOTS_RIGHT, true);
   }
-  positionBalloonGroup();
+
+  // 🎈 與 flue 對齊
+positionBalloonGroup();
+  positionFinish();
 }
 
+/* 在樹上建立 overlay */
+function ensureTreeOverlay(treeEl, id){
+  let ov = document.getElementById(id);
+  if (!ov){
+    ov = document.createElement('div');
+    ov.id = id;
+    ov.className = 'tree-overlay';
+    ov.style.position = 'absolute';
+    ov.style.pointerEvents = 'auto';
+    $('#scaleRoot').appendChild(ov);
+  }
+  ov.style.left   = treeEl.offsetLeft + 'px';
+  ov.style.top    = treeEl.offsetTop  + 'px';
+  ov.style.width  = treeEl.clientWidth  + 'px';
+  ov.style.height = treeEl.clientHeight + 'px';
+ov.style.zIndex = 6;
+  return ov;
+}
 
-  /* ========== 縮放：整個內容一起等比縮（重點） ========== */
+/* 建立左/右樹 baubles（右樹支援特製白球底圖） */
+function buildTreeBaubles(treeSelector, letters, spots, isRight){
+  const tree = document.querySelector(treeSelector);
+  if (!tree) return;
+
+  const overlay = ensureTreeOverlay(tree, isRight ? 'ovRight' : 'ovLeft');
+  overlay.querySelectorAll('.tree1-bauble, .tree2-bauble').forEach(n=>n.remove());
+
+  const w = overlay.clientWidth;
+  const size = Math.max(28, Math.min(w * 0.22 * 1.3, 120 * 1.3));
+  const L = Math.min((letters || []).length, spots.length);
+
+  for (let i=0;i<L;i++){
+    const rawToken = letters[i];
+    const tokenLower = String(rawToken).trim().toLowerCase();
+    const pos = spots[i];
+
+    const wrap = document.createElement('div');
+    wrap.className = isRight ? 'tree2-bauble' : 'tree1-bauble';
+    wrap.style.position = 'absolute';
+    wrap.style.width  = size+'px';
+    wrap.style.height = size+'px';
+    wrap.style.left = `calc(${pos.x*100}% - ${size/2}px)`;
+    wrap.style.top  = `calc(${pos.y*100}% - ${size/2}px)`;
+    wrap.dataset.letter = isRight ? tokenLower : tokenLower;
+    wrap.style.pointerEvents = 'auto';
+
+    // 底球
+    const baseImg = document.createElement('img');
+    baseImg.dataset.role = 'base';
+    baseImg.className = 'bauble-base' + (isRight && !WHITE_IMG_TOKENS.has(tokenLower) ? ' wb-default' : '');
+    baseImg.alt = isRight ? 'white bauble' : 'red bauble';
+    baseImg.src = isRight ? whiteSrc(rawToken, false) : 'graphic/redbauble.png';
+    wrap.appendChild(baseImg);
+
+    // 文字層（紅球顯字／一般白球顯字；特製白球已用貼圖，不加字）
+    if (!isRight){
+      const span = document.createElement('span');
+      span.className = 'baubleLetter letter-layer';
+      span.textContent = rawToken;
+      span.style.fontSize = (size * 0.52) + 'px';
+      span.style.left='50%'; span.style.bottom='12%'; span.style.transform='translateX(-50%)';
+      wrap.appendChild(span);
+} else if (!WHITE_IMG_TOKENS.has(tokenLower)) {
+      const span = document.createElement('span');
+      span.className = 'tree2-letter letter-layer';
+      span.textContent = rawToken;
+      span.style.fontSize = (size * 0.52) + 'px';
+      span.style.left='50%'; span.style.bottom='12%'; span.style.transform='translateX(-50%)';
+      wrap.appendChild(span);
+    }
+
+    overlay.appendChild(wrap);
+
+    // 點擊（右樹：先預聽，然後處理選取；左樹：只處理選取）
+    wrap.addEventListener('click', ()=>{
+      // 右樹白球：點擊預聽（不受 bellLocked 限制）
+      if (isRight){
+        previewWhiteAudio(rawToken);
+      }
+
+      // 選取只在未鎖鐘時有效
+      if (bellLocked) return;
+
+      overlay.querySelectorAll(isRight ? '.tree2-bauble' : '.tree1-bauble').forEach(n=>{
+        n.classList.remove('selected');
+        const base = n.querySelector('[data-role="base"]');
+        if (base){
+          if (isRight){
+            base.src = whiteSrc(n.dataset.letter, false);
+          }else{
+            base.src = 'graphic/redbauble.png';
+          }
+        }
+      });
+
+      wrap.classList.add('selected');
+      const base = wrap.querySelector('[data-role="base"]');
+      if (base){
+        if (isRight){
+          base.src = whiteSrc(wrap.dataset.letter, true);
+        }else{
+          base.src = 'graphic/redbauble_glow.png';
+        }
+      }
+
+      if (isRight) selectedWhite = wrap; else selectedRed = wrap;
+    });
+  }
+}
+
+/* 預聽白球音檔（AEIOU/aeiou 靜音，不播；特定組合音量30%） */
+function previewWhiteAudio(rawToken){
+  const t = String(rawToken).trim();
+
+  // AEIOU / aeiou → 不播放預聽
+  if (/^[AEIOU]$/.test(t) || /^[aeiou]$/.test(t)) {
+    return;
+  }
+
+  const key = t.toLowerCase();
+  const src = `${AUDIO_PATH}${key}.mp3`;
+
+  try {
+    const audio = new Audio(src);
+
+    // 以下組合細聲 30%
+    const quietTokens = ['ic', 'ite', 'eng', 'ue', 'ir', 'oi', 'or', 'ou'];
+    if (quietTokens.includes(key)) {
+      audio.volume = 0.6;
+    }
+
+    audio.play();
+  } catch (e) {}
+}
+
+/* ========= 等比縮放 ========= */
 function applyScale(){
   const frame = document.getElementById('frame');
   const root  = document.getElementById('scaleRoot');
-
-  // 先還原
-  root.style.transform = 'scale(1)';
-  root.style.left = '0px';
-  root.style.top  = '0px';
+  root.style.transform = 'scale(1)'; root.style.left = '0px'; root.style.top  = '0px';
 
   const FW = frame.clientWidth;
   const FH = frame.clientHeight;
   const designW = 1280, designH = 740;
 
-  // 只縮不放：避免內容被放大而溢出黑框
   const scale = Math.min(1, FW / designW, FH / designH);
-
   const contentW = designW * scale;
-  const contentH = designH * scale;
-
   const leftPx = Math.round((FW - contentW) / 2);
-  const topPx  = 0;
 
   root.style.left = leftPx + 'px';
-  root.style.top  = topPx + 'px';
+  root.style.top  = '0px';
   root.style.transform = `scale(${scale})`;
 }
 
 function safeLayoutAndScale(){
   const root = document.getElementById('scaleRoot');
+  root.style.transform = 'scale(1)'; root.style.left = '0px'; root.style.top = '0px';
 
-  // 暫時還原去原尺寸，避免上次縮放影響量度／排位
-  const prevTransform = root.style.transform;
-  const prevLeft = root.style.left;
-  const prevTop  = root.style.top;
+  layout();        // 先按原始 1280×740 佈局
+  applyScale();    // 再整體縮放
 
-  root.style.transform = 'scale(1)';
-  root.style.left = '0px';
-  root.style.top  = '0px';
-
-  // 先排位（按 1280×740 原尺寸）
-  layout();
-
-  // 再套正確縮放與定位
-  applyScale();
-
-  // 不需要還原 prevTransform/left/top，因為 applyScale 已經設定好
+  // 下一幀再跑一次，確保實際尺寸穩定後重對齊（可避免你提到的微移）
+  requestAnimationFrame(() => {
+    layout();
+    positionFinish();          // ← 追加
+  });
 }
 
-
-  /* ========== 紅/白球、氣球組、動畫、工具 ========== */
-  function buildTree1Baubles(letters){
-    const stage = $('#stage'), tree = $('#treeLeft');
-    const sRect = rect(stage), tRect = rect(tree);
-    $$('.tree1-bauble').forEach(n=>n.remove());
-
-    const w = tRect.width, h = tRect.height;
-    const originX = tRect.left - sRect.left;
-    const originY = tRect.top  - sRect.top;
-
-    const spots = [
-      {x: 0.5, y: 0.08},
-      {x: 0.68, y: 0.25},
-      {x: 0.34, y: 0.38},
-      {x:  0.7, y: 0.50},
-      {x:  0.2, y: 0.60},
-      {x:  0.9, y: 0.70},
-      {x:  0.5, y: 0.76},
-    ];
-    const size = Math.max(28, Math.min(w * 0.22 * 1.3, 120 * 1.3));
-    const L = Math.min(letters.length, spots.length);
-
-    for (let i=0;i<L;i++){
-      const pos = spots[i];
-      const wrap = document.createElement('div');
-      wrap.className = 'tree1-bauble';
-      wrap.style.width = size+'px';
-      wrap.style.height= size+'px';
-      wrap.style.left  = (originX + pos.x*w - size/2) + 'px';
-      wrap.style.top   = (originY + pos.y*h - size/2) + 'px';
-
-      const img = document.createElement('img');
-      img.src = 'graphic/redbauble.png'; img.alt = 'red bauble';
-
-      const span = document.createElement('span');
-      span.className = 'baubleLetter';
-      span.textContent = letters[i];
-      span.style.fontSize = (size * 0.5) + 'px';
-
-      wrap.append(img, span);
-      stage.appendChild(wrap);
-
-      wrap.addEventListener('click', ()=>{
-        if (bellLocked) return;
-        $$('.tree1-bauble').forEach(n=>{
-          n.classList.remove('selected');
-          const im=n.querySelector('img'); if(im) im.src='graphic/redbauble.png';
-        });
-        wrap.classList.add('selected');
-        const im=wrap.querySelector('img'); if(im) im.src='graphic/redbauble_glow.png';
-        selectedRed = wrap;
-      });
-    }
+/* ========== 氣球組 / 音檔 key ========== */
+function getAudioKey(){
+  const cur = queue[qPos];
+  let w = cur.w;
+  switch (w) {
+    case 'A': w = 'ai'; break;
+    case 'E': w = 'ee'; break;
+    case 'I': w = 'y';  break;
+    case 'O': w = 'oa'; break;
+    case 'U': w = 'ew'; break;
+    default:  w = String(w).toLowerCase();
   }
+  return `${cur.r}${w}`;
+}
 
-  function buildTree2Baubles(letters){
-    const stage = $('#stage'), tree = $('#treeBehind');
-    const sRect = rect(stage), tRect = rect(tree);
-    $$('.tree2-bauble').forEach(n=>n.remove());
+function spawnBalloonGroup(){
+  $('#balloonGroup')?.remove();
+  const stage = $('#stage');
 
-    const w = tRect.width, h = tRect.height;
-    const originX = tRect.left - sRect.left;
-    const originY = tRect.top  - sRect.top;
+  const g = document.createElement('div');
+  g.id='balloonGroup'; g.className = 'balloon-group';
 
-    const spots = [
-      {x: 0.52, y: 0.18},
-      {x: 0.70, y: 0.33},
-      {x: 0.34, y: 0.36},
-      {x: 0.75, y: 0.53},
-      {x: 0.42, y: 0.59},
-      {x: 0.88, y: 0.66},
-      {x: 0.52, y: 0.72},
-    ];
-    const size = Math.max(28, Math.min(w * 0.27, 130));
-    const L = Math.min(letters.length, spots.length);
+  const red = document.createElement('img'); red.id='redBalloon'; red.className='balloon'; red.src='graphic/redballoon.png';
+  const yel = document.createElement('img'); yel.id='yellowBalloon'; yel.className='balloon'; yel.src='graphic/yellowballoon.png';
+  const box = document.createElement('img'); box.id='giftBox'; box.className='gift-box'; box.src='graphic/box1.png';
 
-    for (let i=0;i<L;i++){
-      const pos = spots[i];
-      const wrap = document.createElement('div');
-      wrap.className = 'tree2-bauble';
-      wrap.style.width = size+'px';
-      wrap.style.height= size+'px';
-      wrap.style.left  = (originX + pos.x*w - size/2) + 'px';
-      wrap.style.top   = (originY + pos.y*h - size/2) + 'px';
+  g.append(red, yel, box);
+  stage.appendChild(g);
 
-      const img = document.createElement('img');
-      img.src = 'graphic/whitebauble.png'; img.alt = 'white bauble';
+  positionBalloonGroup();           // 與 flue 對齊
+  g.classList.add('enterRight','float');
 
-      const span = document.createElement('span');
-      span.className = 'tree2-letter';
-      span.textContent = letters[i];
-      span.style.fontSize = (size * 0.52) + 'px';
+  const audioKey = getAudioKey();
+  setTimeout(() => { playOnce(`${AUDIO_PATH}${audioKey}.mp3`); }, 1600);
 
-      wrap.append(img, span);
-      stage.appendChild(wrap);
-
-      wrap.addEventListener('click', ()=>{
-        if (bellLocked) return;
-        $$('.tree2-bauble').forEach(n=>{
-          n.classList.remove('selected');
-          const im=n.querySelector('img'); if(im) im.src='graphic/whitebauble.png';
-        });
-        wrap.classList.add('selected');
-        const im=wrap.querySelector('img'); if(im) im.src='graphic/whitebauble_glow.png';
-        selectedWhite = wrap;
-      });
-    }
-  }
-
-  function spawnBalloonGroup(){
-    const stage = $('#stage');
-    $('#balloonGroup')?.remove();
-
-    const g = document.createElement('div');
-    g.id = 'balloonGroup'; g.className = 'balloon-group';
-
-    const red = document.createElement('img');
-    red.id='redBalloon'; red.className='balloon'; red.src='graphic/redballoon.png';
-    const yel = document.createElement('img');
-    yel.id='yellowBalloon'; yel.className='balloon'; yel.src='graphic/yellowballoon.png';
-    const box = document.createElement('img');
-    box.id='giftBox'; box.className='gift-box'; box.src='graphic/box1.png';
-
-    g.append(red, yel, box);
-    stage.appendChild(g);
-
-  withRootUnscaled(()=> {
-    positionBalloonGroup();
-  });    g.classList.add('enterRight','float');
-
-    const pair = getCurrentPair();
-    setTimeout(() => { playOnce(`${AUDIO_PATH}${pair}.mp3`); }, 1600);
-
-    box.addEventListener('click', ()=>{
-      if (bellLocked) return;
-      playOnce(`${AUDIO_PATH}${pair}.mp3`);
-    });
-  }
-
-  function positionBalloonGroup(){
-    const g = $('#balloonGroup'); if (!g) return;
-    const st = rect($('#stage'));
-    const fl = rect($('#flue'));
-    const gw = g.getBoundingClientRect().width || parseFloat(getComputedStyle(g).width);
-    const left = (fl.left - st.left) + fl.width/2 - gw/2 - 20;
-    const top  = Math.max(10, st.height * 0.10);
-    g.style.left = left + 'px';
-    g.style.top  = top  + 'px';
-  }
-
-  /* 工具 */
-  function playOnce(src){
-    return new Promise((res)=>{ const a = new Audio(src); a.onended = ()=>res(); a.onerror=()=>res(); a.play().catch(()=>res()); });
-  }
-  function letterOf(node){
-    const span = node?.querySelector('.baubleLetter, .tree2-letter');
-    return span ? span.textContent.trim().toLowerCase() : '';
-  }
-  function shuffle(a){
-    for (let i = a.length - 1; i > 0; i--){
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  }
-  function makeQueue(set){
-    const reds   = Array.isArray(set.reds)   ? [...set.reds]   : [];
-    const whites = Array.isArray(set.whites) ? [...set.whites] : [];
-
-    if (reds.length === 0) return [];
-    shuffle(reds); shuffle(whites);
-    if (whites.length === 0) whites.push('a');
-
-    const L = reds.length;
-    const mustHave = whites.slice(0, Math.min(whites.length, L));
-    const whSeq = [...mustHave];
-    while (whSeq.length < L){ whSeq.push( whites[Math.floor(Math.random() * whites.length)] ); }
-    shuffle(whSeq);
-    return reds.map((r, i) => ({ r, w: whSeq[i] }));
-  }
-  function getCurrentPair(){ const cur = queue[qPos]; return `${cur.r}${cur.w}`; }
-  function fadeBalloon(el, burstSrc){
-    return new Promise(resolve=>{
-      if (!el) return resolve();
-      el.src = burstSrc;
-      el.classList.add('balloon-burst-fade');
-      setTimeout(()=>{ el.style.display='none'; resolve(); }, 300);
-    });
-  }
-
-  /* 題目流程 */
-  function lockBell(lock){
-    bellLocked = lock;
-    const b = $('#bell');
-    if (lock){ b.setAttribute('disabled',''); } else { b.removeAttribute('disabled'); }
-  }
-
-  function nextQuestion(){
-    qPos++;
-    selectedRed = selectedWhite = null;
-    $$('.tree1-bauble img').forEach(im=> im.src='graphic/redbauble.png');
-    $$('.tree2-bauble img').forEach(im=> im.src='graphic/whitebauble.png');
-    $$('.tree1-bauble, .tree2-bauble').forEach(b=>b.classList.remove('selected'));
-
-    if (qPos >= queue.length){ showFinish(); return; }
-
-    const key = getCurrentPair();
-    if (!attemptsMap.has(key)) attemptsMap.set(key, 0);
-
-    spawnBalloonGroup();
-    lockBell(false);
-  }
-
-  function submit(){
+  box.addEventListener('click', ()=>{
     if (bellLocked) return;
+    playOnce(`${AUDIO_PATH}${audioKey}.mp3`);
+  });
+}
 
-    const bell = $('#bell');
-    bell.classList.add('bell-press');
-    setTimeout(()=>bell.classList.remove('bell-press'), 120);
-    (()=>{ const a=new Audio(`${AUDIO_PATH}bell.mp3`); a.volume=0.5; a.play(); })();
+function positionBalloonGroup(){
+  const g = $('#balloonGroup'); if (!g) return;
+  const st = rect($('#stage'));
+  const fl = rect($('#flue'));
+  const gw = g.getBoundingClientRect().width || parseFloat(getComputedStyle(g).width);
+  const left = (fl.left - st.left) + fl.width/2 - gw/2;  // 中心對齊 flue
+  const top  = Math.max(10, st.height * 0.10);
+  g.style.left = left + 'px';
+  g.style.top  = top  + 'px';
+}
 
-    if (qPos < 0 || !queue[qPos]) return;
-    if (!selectedRed || !selectedWhite) return;
+/* 工具 */
+function playOnce(src){
+  return new Promise((res)=>{ const a = new Audio(src); a.onended = ()=>res(); a.onerror=()=>res(); a.play().catch(()=>res()); });
+}
+function letterOf(node){
+  return (node && node.dataset && node.dataset.letter)
+    ? String(node.dataset.letter).toLowerCase().trim()
+    : '';
+}
+function shuffle(a){ for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function makeQueue(set){
+  const reds=[...(set.reds||[])], whites=[...(set.whites||[])];
+  shuffle(reds); shuffle(whites); if(!whites.length) whites.push('a');
+  const L=reds.length, must=whites.slice(0, Math.min(whites.length, L));
+  const seq=[...must]; while(seq.length<L) seq.push( whites[Math.floor(Math.random()*whites.length)] );
+  shuffle(seq);
+  return reds.map((r,i)=>({r, w:seq[i]}));
+}
 
-    lockBell(true);
-    unlockSetPicker();
+/* ========== 題目流程 ========== */
+function lockBell(lock){
+  bellLocked = lock;
+  const b = $('#bell');
+  if (lock){ b.setAttribute('disabled',''); } else { b.removeAttribute('disabled'); }
+}
 
-    const rb  = $('#redBalloon');
-    const yb  = $('#yellowBalloon');
-    const box = $('#giftBox');
+function nextQuestion(){
+  qPos++;
+  selectedRed = selectedWhite = null;
 
-    const pair  = getCurrentPair();
-    const wantR = pair[0], wantW = pair[1];
-    const gotR  = letterOf(selectedRed);
-    const gotW  = letterOf(selectedWhite);
+  // 還原底圖
+  $$('.tree1-bauble [data-role="base"]').forEach(im=> im.src='graphic/redbauble.png');
+  $$('.tree2-bauble').forEach(w=>{
+    const im = w.querySelector('[data-role="base"]');
+    if (im) im.src = whiteSrc(w.dataset.letter, false);
+  });
+  $$('.tree1-bauble, .tree2-bauble').forEach(b=>b.classList.remove('selected'));
 
-    attemptsMap.set(pair, (attemptsMap.get(pair) || 0) + 1);
+  if (qPos >= queue.length){ showFinish(); return; }
 
-    const redOK   = (gotR === wantR);
-    const whiteOK = (gotW === wantW);
+  const key = getAudioKey();
+  if (!attemptsMap.has(key)) attemptsMap.set(key, 0);
 
-    const pop = ()=>{ try{ new Audio(`${AUDIO_PATH}pop.mp3`).play(); }catch(e){} };
+  spawnBalloonGroup();
+  lockBell(false);
+}
 
-    if (redOK && whiteOK){
-      pop();
-      const group = $('#balloonGroup');
-      group?.classList.remove('float');
+function submit(){
+  if (bellLocked) return;
 
-      Promise.all([
-        fadeBalloon(rb, 'graphic/redballoonb.png'),
-        fadeBalloon(yb, 'graphic/yellowballoonb.png')
-      ]).then(()=>{
-        setTimeout(()=>{
-          if (box){
-            box.style.display = '';
-            box.classList.remove('box-tilt-drop','box-tilt-neg-drop');
-            box.style.animation = 'none';
-            void box.offsetWidth;
-            box.style.animation = 'boxFall 2s cubic-bezier(.2,.8,.2,1) forwards';
+  const bell = $('#bell');
+  bell.classList.add('bell-press');
+  setTimeout(()=>bell.classList.remove('bell-press'), 120);
+  (()=>{ const a=new Audio(`${AUDIO_PATH}bell.mp3`); a.volume=0.5; a.play(); })();
 
-            setTimeout(()=>{ swapSanta(SANTA_HAPPY, 500); nextQuestion(); }, 500);
+  if (qPos < 0 || !queue[qPos]) return;
+  if (!selectedRed || !selectedWhite) return;
 
-            box.addEventListener('animationend', ()=>{
-              box.style.display = 'none';
-              box.style.animation = '';
-            }, { once:true });
-          }else{
-            setTimeout(()=> swapSanta(SANTA_HAPPY, 500), 500);
-            setTimeout(nextQuestion, 100);
-          }
-        }, 400);
-      });
+  lockBell(true);
+  unlockSetPicker();
 
-    } else {
-      queue.push(queue[qPos]);
-      if (box) box.classList.remove('box-drop','box-tilt-drop','box-tilt-neg-drop');
-      flyOutToLeft(null, true);
-    }
+  const rb  = $('#redBalloon');
+  const yb  = $('#yellowBalloon');
+  const box = $('#giftBox');
+
+  const wantR = String(queue[qPos].r).toLowerCase();
+  const wantW = String(queue[qPos].w).toLowerCase();
+  const gotR  = letterOf(selectedRed);
+  const gotW  = letterOf(selectedWhite);
+
+  const audioKey = getAudioKey();
+  attemptsMap.set(audioKey, (attemptsMap.get(audioKey) || 0) + 1);
+
+  const redOK   = (gotR === wantR);
+  const whiteOK = (gotW === wantW);
+
+  const pop = ()=>{ try{ new Audio(`${AUDIO_PATH}pop.mp3`).play(); }catch(e){} };
+
+  if (redOK && whiteOK){
+    pop();
+    const group = $('#balloonGroup');
+    group?.classList.remove('float');
+
+    Promise.all([
+      fadeBalloon(rb, 'graphic/redballoonb.png'),
+      fadeBalloon(yb, 'graphic/yellowballoonb.png')
+    ]).then(()=>{
+      setTimeout(()=>{
+        if (box){
+          box.style.display=''; box.style.animation='none'; void box.offsetWidth;
+          box.style.animation='boxFall 2s cubic-bezier(.2,.8,.2,1) forwards';
+          setTimeout(()=>{ swapSanta(SANTA_HAPPY, 500); nextQuestion(); }, 500);
+          box.addEventListener('animationend', ()=>{ box.style.display='none'; box.style.animation=''; }, {once:true});
+        }else{
+          setTimeout(()=> swapSanta(SANTA_HAPPY, 500), 500);
+          setTimeout(nextQuestion, 100);
+        }
+      }, 400);
+    });
+
+  } else {
+    queue.push(queue[qPos]); // 放到尾
+    if (box) box.classList.remove('box-drop','box-tilt-drop','box-tilt-neg-drop');
+    flyOutToLeft(null, true);
   }
+}
 
-  function flyOutToLeft(after, makeSad){
-    const g = $('#balloonGroup'); if (!g){ if(after) after(); return; }
-    g.classList.remove('enterRight');
-    g.classList.add('leaver','leaveLeft');
-    if (makeSad){
-      setTimeout(() => {
-        swapSanta(SANTA_SAD, 1200);
-        nextQuestion();
-      }, 700);
-    }
-    g.addEventListener('animationend', ()=>{ g.remove(); if (after) after(); }, {once:true});
+function fadeBalloon(el, burstSrc){
+  return new Promise(resolve=>{
+    if (!el) return resolve();
+    el.src = burstSrc;
+    el.classList.add('balloon-burst-fade');
+    setTimeout(()=>{ el.style.display='none'; resolve(); }, 300);
+  });
+}
+
+function flyOutToLeft(after, makeSad){
+  const g = $('#balloonGroup'); if (!g){ after&&after(); return; }
+  g.classList.remove('enterRight');
+  g.classList.add('leaver','leaveLeft');
+  if (makeSad){
+    setTimeout(()=>{ swapSanta(SANTA_SAD, 1200); nextQuestion(); }, 700);
   }
+  g.addEventListener('animationend', ()=>{ g.remove(); after&&after(); }, {once:true});
+}
 
-  function swapSanta(to, ms=1200){
-    const s = $('#santa'); s.src = to; setTimeout(()=>{ s.src = SANTA_NORM; }, ms);
-  }
+function swapSanta(to, ms=1200){
+  const s = $('#santa'); s.src = to; setTimeout(()=>{ s.src = SANTA_NORM; }, ms);
+}
 
-  function showFinish(){
-    const lines = basePairs.map(p => `${p}   x   ${attemptsMap.get(p) ? attemptsMap.get(p) : 1}`);
-    $('#finishList').textContent = lines.join('\n');
-    $('#finishPanel').style.display = 'flex';
-    lockBell(true);
-    unlockSetPicker();
-  }
+function showFinish(){
+  const lines = basePairs.map(p => `${p}   x   ${attemptsMap.get(p) ? attemptsMap.get(p) : 1}`);
+  document.getElementById('finishList').textContent = lines.join('\n');
+  document.getElementById('finishPanel').style.display = 'flex';
+  positionFinish();   // ← 新增
+  lockBell(true);
+  unlockSetPicker();
+}
 
-  /* 事件綁定 */
-  $('#bell').addEventListener('click', submit);
-  window.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') submit(); });
+/* Set 選單 */
+function unlockSetPicker(){
+  const picker = document.querySelector('#setPicker select');
+  const btn = document.querySelector('#setGoBtn');
+  picker && picker.removeAttribute('disabled');
+  btn && btn.removeAttribute('disabled');
+}
+
+$('#bell').addEventListener('click', submit);
+window.addEventListener('keydown', e=>{ if(e.key==='Enter') submit(); });
 
 $('#setGoBtn').addEventListener('click', ()=>{
   const val = $('#setPickerSelect').value;
@@ -716,72 +723,64 @@ $('#setGoBtn').addEventListener('click', ()=>{
   $('#finishPanel').style.display = 'none';
   qPos = -1;
 
-  // 不在這裡建 baubles；由 layout() 去建
-  queue = makeQueue(SETS[currentSetIndex]);
-  basePairs = queue.map(q => `${q.r}${q.w}`);
+  const set = SETS[currentSetIndex];
+  queue = makeQueue(set);
+  basePairs = queue.map(q => {
+    let w = q.w;
+    if (w === 'A') w = 'ai';
+    else if (w === 'E') w = 'ee';
+    else if (w === 'I') w = 'y';
+    else if (w === 'O') w = 'oa';
+    else if (w === 'U') w = 'ew';
+    return `${q.r}${String(w).toLowerCase()}`;
+  });
 
-  // 先在「未縮放＝1」狀態下重排並建立 baubles，再套縮放
   safeLayoutAndScale();
-
   nextQuestion();
 });
 
-  function unlockSetPicker() {
-    const picker = document.querySelector('#setPicker select');
-    const btn = document.querySelector('#setGoBtn');
-    if (picker) picker.removeAttribute('disabled');
-    if (btn) btn.removeAttribute('disabled');
-  }
-
-  /* 雪花 */
-  function whenImagesReady(images, cb){
-    let left = images.length; if (!left) return cb();
-    images.forEach(img=>{
-      if (img.complete) { if(--left===0) cb(); }
-      else {
-        img.addEventListener('load', ()=>{ if(--left===0) cb(); });
-        img.addEventListener('error',()=>{ if(--left===0) cb(); });
-      }
-    });
-  }
-  const rnd = (min,max)=> Math.random()*(max-min)+min | 0;
-  function createSnowflake(stage){
-    const wrap=document.createElement('div'); wrap.className='snowWrap';
-    const flake=document.createElement('img'); flake.src='graphic/snow.png'; flake.alt='snow'; flake.className='snow';
-const designWidth = 1280;   // 你的舞台原始寬度
-const sizePx = rnd(10,30);
-const leftPx = rnd(0, designWidth - sizePx);
- flake.style.width = sizePx + 'px';
-wrap.style.left = leftPx + 'px';
+/* Snow */
+function whenImagesReady(images, cb){
+  let left = images.length; if (!left) return cb();
+  images.forEach(img=>{
+    if (img.complete) { if(--left===0) cb(); }
+    else {
+      img.addEventListener('load', ()=>{ if(--left===0) cb(); });
+      img.addEventListener('error',()=>{ if(--left===0) cb(); });
+    }
+  });
+}
+const rnd = (min,max)=> Math.floor(Math.random()*(max-min+1))+min;
+function createSnowflake(stage){
+  const wrap=document.createElement('div'); wrap.className='snowWrap';
+  const flake=document.createElement('img'); flake.src='graphic/snow.png'; flake.alt='snow'; flake.className='snow';
+  const sizePx = rnd(10,30);
+  const leftPx = rnd(0, 1280 - sizePx);
+  flake.style.width = sizePx + 'px';
+  wrap.style.left = leftPx + 'px';
   const duration = rnd(6, 12);
   const delay = Math.random() * 0.8;
   flake.style.animation = `snow-fall ${duration}s linear ${delay}s forwards`;
-
-  const amp = rnd(10, 40);           // 左右擺幅
-  const sway = rnd(5, 11);           // 左右搖擺速度
+  const amp = rnd(10, 40), sway = rnd(5, 11);
   wrap.style.setProperty('--amp', amp + 'px');
   wrap.style.animation = `snow-sway ${sway}s ease-in-out ${Math.random()}s infinite alternate`;
-
-      flake.style.transform = `rotate(${rnd(-25,25)}deg)`;
+  flake.style.transform = `rotate(${rnd(-25,25)}deg)`;
   flake.addEventListener('animationend', ()=> wrap.remove());
+  wrap.appendChild(flake); stage.appendChild(wrap); return wrap;
+}
+function spawnSnowBatch(){ const stage=$('#stage'); const count=rnd(3,7); for(let i=0;i<count;i++) createSnowflake(stage); }
+function startSnow(){ spawnSnowBatch(); setInterval(spawnSnowBatch, rnd(800,1600)); }
 
-    wrap.appendChild(flake); stage.appendChild(wrap); return wrap;
-  }
-
-  function spawnSnowBatch(){ const stage=$('#stage'); const count=rnd(3,7); for(let i=0;i<count;i++) createSnowflake(stage); }
-  function startSnow(){ spawnSnowBatch(); setInterval(spawnSnowBatch, rnd(800,1600)); }
-
-  /* 起動：先排位，再縮放 */
-  const imgs = Array.from(document.querySelectorAll('img.sprite'));
-  whenImagesReady(imgs, ()=>{
-    safeLayoutAndScale();
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) startSnow();
-    lockBell(true);
-    unlockSetPicker();
-  });
-
-  window.addEventListener('resize', safeLayoutAndScale);
-  window.addEventListener('orientationchange', safeLayoutAndScale);
+/* 起動 */
+const imgs = Array.from(document.querySelectorAll('img.sprite'));
+whenImagesReady(imgs, ()=>{
+  safeLayoutAndScale();
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) startSnow();
+  lockBell(true);
+  unlockSetPicker();
+});
+window.addEventListener('resize', safeLayoutAndScale);
+window.addEventListener('orientationchange', safeLayoutAndScale);
 </script>
 </body>
 </html>
