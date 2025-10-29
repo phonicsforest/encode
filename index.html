@@ -156,7 +156,7 @@
       <div id="setPicker">
  <select id="setPickerSelect">
 <option value="">-----</option>
-<option value="0">SET 1 -- a</option>
+<option value="0">SET 1a -- a</option>
 <option value="1">SET 2 -- a i</option>
 <option value="2">SET 3 -- a i e</option>
 <option value="3">SET 4 -- a i e o</option>
@@ -519,12 +519,8 @@ function safeLayoutAndScale(){
   root.style.top  = '0px';
 
   layout();        // 第一次排位（依 1280×740）
-
-  // 立刻做縮放置中
   applyScale();
-
-  // 圖片/字體 ready 之後可能有微小尺寸變動 → 再補一次 layout（不重覆 scale）
-  setTimeout(() => { layout(); }, 60);
+  positionFinish(); // 保留，Finish 面板才會對齊 flue
 }
 
 /* ========== 氣球組 / 音檔 key ========== */
@@ -796,6 +792,15 @@ whenImagesReady(imgs, ()=>{
 });
 window.addEventListener('resize', safeLayoutAndScale);
 window.addEventListener('orientationchange', safeLayoutAndScale);
+whenImagesReady(imgs, ()=>{
+  setTimeout(()=>{
+    safeLayoutAndScale();
+  }, 200); // 加少少 delay 等圖片 load 定
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) startSnow();
+  lockBell(true);
+  unlockSetPicker();
+});
+
 </script>
 </body>
 </html>
