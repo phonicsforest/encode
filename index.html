@@ -207,13 +207,13 @@ const SETS = [
   { reds: ['l','m','j','p','r','s','t'], whites: ['a','i','e','o'] },
   { reds: ['b','k','d','f','g','h','n'], whites: ['a','i','e','o','u'] },
   { reds: ['l','m','j','p','r','s','t'], whites: ['a','e'] },
-  { reds: ['l','m','j','p','r','s','t'], whites: ['ic','A'] },
-  { reds: ['b','k','d','f','g','h','n'], whites: ['ic','A','E'] },
-  { reds: ['l','m','j','p','r','s','t'], whites: ['ic','A','E','I'] },
-  { reds: ['b','k','d','f','g','h','n'], whites: ['ic','A','E','I','O'] },
+  { reds: ['b','k','d','f','g','h','n'], whites: ['ic','A'] },
+  { reds: ['l','m','j','p','r','s','t'], whites: ['ic','A','E'] },
+  { reds: ['b','k','d','f','g','h','n'], whites: ['ic','A','E','I'] },
+  { reds: ['l','m','j','p','r','s','t'], whites: ['ic','A','E','I','O'] },
   { reds: ['b','k','d','f','g','h','n'], whites: ['E','i'] },
-  { reds: ['b','k','d','f','g','h','n'], whites: ['E','U'] },
-  { reds: ['l','m','j','p','r','s','t'], whites: ['U','ite','eng'] },
+  { reds: ['l','m','j','p','r','s','t'], whites: ['E','U'] },
+  { reds: ['b','k','d','f','g','h','n'], whites: ['U','ite','eng'] },
   { reds: ['l','m','j','p','r','s','t'], whites: ['U','ite','eng','ue'] },
   { reds: ['b','k','d','f','g','h','n'], whites: ['U','ite','eng','ue','or'] },
   { reds: ['l','m','j','p','r','s','t'], whites: ['ir','or','oi']},
@@ -275,15 +275,17 @@ function positionFinish(){
   if (!panel || panel.style.display === 'none') return;
 
   const card = document.getElementById('finishCard');
-  const st = rect(document.getElementById('stage'));
-  const fl = rect(document.getElementById('flue'));
+  const st   = document.getElementById('stage').getBoundingClientRect();
+  const fl   = document.getElementById('flue').getBoundingClientRect();
+  const scale = window._stageScale || 1;
 
-  // 以 stage 作座標系，取 flue 的正中
-  const flCenterX = (fl.left - st.left) + fl.width/2 +45;
+  // flue 中心（視窗座標）→ 換算回未 scale 的 left
+  const centerX_view = (fl.left - st.left) + fl.width / 2;
+  const manualNudge  = 45;  // 你想手動微移的像素（如需可調）
+  const left_unscaled = (centerX_view + manualNudge) / scale;
 
-  card.style.left = flCenterX + 'px';
+  card.style.left = left_unscaled + 'px';
 }
-
 /* ========== 版面定位（只計 1280×740 原尺寸） ========== */
 function layout(){
   const stage = $('#stage'), flue = $('#flue'), santa = $('#santa'), bell = $('#bell');
@@ -492,6 +494,9 @@ function applyScale(){
   const vw = window.visualViewport ? window.visualViewport.width  : frame.clientWidth;
   const vh = window.visualViewport ? window.visualViewport.height : frame.clientHeight;
 
+if (window.visualViewport) {
+  visualViewport.addEventListener('resize', safeLayoutAndScale);
+}
   const designW = 1280, designH = 740;
 
   // 等比縮放：以寬高都能放下為準
@@ -520,6 +525,7 @@ function safeLayoutAndScale(){
 
   layout();        // 第一次排位（依 1280×740）
   applyScale();
+positionBalloonGroup(); 
   positionFinish(); // 保留，Finish 面板才會對齊 flue
 }
 
@@ -565,16 +571,24 @@ function spawnBalloonGroup(){
 }
 
 function positionBalloonGroup(){
-  const g = $('#balloonGroup'); if (!g) return;
-  const st = rect($('#stage'));
-  const fl = rect($('#flue'));
-  const gw = g.getBoundingClientRect().width || parseFloat(getComputedStyle(g).width);
-  const left = (fl.left - st.left) + fl.width/2 - gw/2;  // 中心對齊 flue
-  const top  = Math.max(10, st.height * 0.10);
-  g.style.left = left + 'px';
-  g.style.top  = top  + 'px';
-}
+  const g  = document.getElementById('balloonGroup'); 
+  if (!g) return;
 
+  const st = document.getElementById('stage').getBoundingClientRect();
+  const fl = document.getElementById('flue').getBoundingClientRect();
+  const scale = window._stageScale || 1;
+
+  // 元件自身寬（未 scale 前）
+  const gw = g.getBoundingClientRect().width || parseFloat(getComputedStyle(g).width);
+
+  // 用「視窗座標」計 flue 中心，再換算回未 scale 的座標
+  const centerX_view = (fl.left - st.left) + fl.width / 2;         // 已 scale 後的差值
+  const left_unscaled = (centerX_view - gw / 2) / scale;           // 換回未 scale
+  const top_unscaled  = Math.max(10, (st.height * 0.10) / scale);  // 同樣要除以 scale
+
+  g.style.left = left_unscaled + 'px';
+  g.style.top  = top_unscaled  + 'px';
+}
 /* 工具 */
 function playOnce(src){
   return new Promise((res)=>{ const a = new Audio(src); a.onended = ()=>res(); a.onerror=()=>res(); a.play().catch(()=>res()); });
