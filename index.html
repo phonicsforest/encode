@@ -274,17 +274,31 @@ function positionFinish(){
   const panel = document.getElementById('finishPanel');
   if (!panel || panel.style.display === 'none') return;
 
-  const card = document.getElementById('finishCard');
-  const st   = document.getElementById('stage').getBoundingClientRect();
-  const fl   = document.getElementById('flue').getBoundingClientRect();
+  const card  = document.getElementById('finishCard');
+  const st    = document.getElementById('stage').getBoundingClientRect();
+  const fl    = document.getElementById('flue').getBoundingClientRect();
   const scale = window._stageScale || 1;
 
-  // flue 中心（視窗座標）→ 換算回未 scale 的 left
-  const centerX_view = (fl.left - st.left) + fl.width / 2;
-  const manualNudge  = 45;  // 你想手動微移的像素（如需可調）
-  const left_unscaled = (centerX_view + manualNudge) / scale;
+  // 判斷手機（窄屏/小縮放）→ 放「畫面中央」；否則沿用 flue 對齊
+  const isPhoneLike = Math.min(st.width, st.height) < 700 || scale < 0.7;
+
+  let centerX_view, centerY_view;
+  if (isPhoneLike){
+    // 手機：畫面中央
+    centerX_view = st.width  / 2;
+    centerY_view = st.height / 2;
+  } else {
+    // 桌面：沿用 flue 水平中心，垂直保持居中（你可按需要微調）
+    centerX_view = (fl.left - st.left) + fl.width / 2;
+    centerY_view = st.height / 2;
+  }
+
+  // 由視窗座標換回未 scale 的座標（因為 scaleRoot 有縮放）
+  const left_unscaled = centerX_view / scale;
+  const top_unscaled  = centerY_view / scale;
 
   card.style.left = left_unscaled + 'px';
+  card.style.top  = top_unscaled  + 'px';
 }
 /* ========== 版面定位（只計 1280×740 原尺寸） ========== */
 function layout(){
@@ -478,7 +492,7 @@ function previewWhiteAudio(rawToken){
     // 以下組合細聲 30%
     const quietTokens = ['ic', 'ite', 'eng', 'ue', 'ir', 'oi', 'or', 'ou'];
     if (quietTokens.includes(key)) {
-      audio.volume = 0.6;
+      audio.volume = 0.4;
     }
 
     audio.play();
@@ -806,14 +820,6 @@ whenImagesReady(imgs, ()=>{
 });
 window.addEventListener('resize', safeLayoutAndScale);
 window.addEventListener('orientationchange', safeLayoutAndScale);
-whenImagesReady(imgs, ()=>{
-  setTimeout(()=>{
-    safeLayoutAndScale();
-  }, 200); // 加少少 delay 等圖片 load 定
-  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) startSnow();
-  lockBell(true);
-  unlockSetPicker();
-});
 
 </script>
 </body>
