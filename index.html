@@ -5,19 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Santa Game</title>
 <style>
-  html, body { height:100%; margin:0; background:#bdd7ee; }
+  html, body { height:100%; margin:0; background:#bdd7ee; overflow:hidden; }
 
-  .frame{
-    height:100vh;
-    aspect-ratio:1280/740;
-    width:auto;
-    margin:0 auto;
-    position:relative;
-    overflow:hidden;
-    background:#bdd7ee;
-    min-height:360px;
-  }
-
+.frame{
+  /* height:100vh; aspect-ratio:1280/740; width:auto;  ← 刪 */
+  width:100svw;             /* 支援 iOS/Android 16+ 的小視窗單位 */
+  height:100dvh;            /* 真實可視高，避免網址列影響 */
+  max-width:100vw;          /* 老瀏覽器 fallback */
+  max-height:100vh;
+  margin:0 auto;
+  position:relative;
+  overflow:hidden;          /* 防止出現捲軸 */
+  background:#bdd7ee;
+  min-height:360px;
+}
   #scaleRoot{
     position:absolute;
     width:1280px;
@@ -290,6 +291,7 @@ function layout(){
   const hill = $('#hill');
   const st = rect(stage);
 
+  // hill 置中
   if (hill){
     const hb = rect(hill);
     hill.style.left = (st.width/2 - hb.width/2) + 'px';
@@ -307,6 +309,7 @@ function layout(){
   santa.style.left   = (fl.right - st.left + OFF.santa.x) + 'px';
   santa.style.bottom = (0 + OFF.santa.y) + 'px';
 
+  // 算 Santa 中線（之後先可以用）
   const sa = rect(santa);
   const saMid = (sa.left + sa.right)/2 - st.left;
 
@@ -320,8 +323,10 @@ function layout(){
   treeLeft.style.left   = (baseLeftL + OFF.leftTree.x) + 'px';
   treeLeft.style.bottom = (0 + OFF.leftTree.y) + 'px';
 
-  // 右樹：依 Santa 中線
-  treeRight.style.left   = (saMid + OFF.rightTree.x) + 'px';
+  // 右樹：依 Santa 中線（窄螢幕再左移少少）
+  const scaleNow = window._stageScale || 1;
+  const extraRightTreeShift = (scaleNow < 0.6) ? -30 : 0;
+  treeRight.style.left   = (saMid + OFF.rightTree.x + extraRightTreeShift) + 'px';
   treeRight.style.bottom = (0 + OFF.rightTree.y) + 'px';
 
   // Set 選單與 flue 同中心線
@@ -339,8 +344,7 @@ function layout(){
     buildTreeBaubles('#treeBehind', set.whites, SPOTS_RIGHT, true);
   }
 
-  // 🎈 與 flue 對齊
-positionBalloonGroup();
+  positionBalloonGroup();
   positionFinish();
 }
 
@@ -483,33 +487,45 @@ function previewWhiteAudio(rawToken){
 function applyScale(){
   const frame = document.getElementById('frame');
   const root  = document.getElementById('scaleRoot');
-  root.style.transform = 'scale(1)'; root.style.left = '0px'; root.style.top  = '0px';
 
-  const FW = frame.clientWidth;
-  const FH = frame.clientHeight;
+  // 取最準的可視區尺寸（有 visualViewport 優先用）
+  const vw = window.visualViewport ? window.visualViewport.width  : frame.clientWidth;
+  const vh = window.visualViewport ? window.visualViewport.height : frame.clientHeight;
+
   const designW = 1280, designH = 740;
 
-  const scale = Math.min(1, FW / designW, FH / designH);
-  const contentW = designW * scale;
-  const leftPx = Math.round((FW - contentW) / 2);
+  // 等比縮放：以寬高都能放下為準
+  const scale = Math.min(vw / designW, vh / designH, 1);
 
-  root.style.left = leftPx + 'px';
-  root.style.top  = '0px';
+  // 置中（水平＋垂直）
+  const contentW = designW * scale;
+  const contentH = designH * scale;
+  const leftPx = Math.round((vw - contentW) / 2);
+  const topPx  = Math.round((vh - contentH) / 2);
+
   root.style.transform = `scale(${scale})`;
+  root.style.left = leftPx + 'px';
+  root.style.top  = topPx  + 'px';
+
+  // 給 layout 可能用到（例如想根據縮放微調 OFF）
+  window._stageScale = scale;
 }
 
 function safeLayoutAndScale(){
+  // 先用設計尺寸排位
   const root = document.getElementById('scaleRoot');
-  root.style.transform = 'scale(1)'; root.style.left = '0px'; root.style.top = '0px';
+  root.style.transform = 'scale(1)';
+  root.style.left = '0px';
+  root.style.top  = '0px';
 
-  layout();        // 先按原始 1280×740 佈局
-  applyScale();    // 再整體縮放
+  layout();        // 第一次排位（依 1280×740）
 
-  // 下一幀再跑一次，確保實際尺寸穩定後重對齊（可避免你提到的微移）
-  requestAnimationFrame(() => {
-    layout();
-    positionFinish();          // ← 追加
-  });
+  // 立刻做縮放置中
+  applyScale();
+
+  // 圖片/字體 ready 之後可能有微小尺寸變動 → 再補一次 layout（不重覆 scale）
+  setTimeout(() => { layout(); }, 60);
+positionFinish();
 }
 
 /* ========== 氣球組 / 音檔 key ========== */
